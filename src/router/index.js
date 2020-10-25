@@ -9,42 +9,30 @@ const router = new VueRouter({
 		{
 			path: "/",
 			name: "index",
-			redirect: "/login",
+			redirect: "/startDesigner",
 		},
 		{
-			path: "/login",
-			name: "login",
+			path: "/startDesigner",
+			name: "startDesigner",
 			component: () =>
 				import(
-					/* webpackChunkName: "login" */ "@/pages/login/index.vue"
+					/* webpackChunkName: "startDesigner" */ "@/pages/startDesigner/index.vue"
 				),
 		},
 		{
-			path: "/home",
-			name: "home",
-			component: () =>
-				import(/* webpackChunkName: "home" */ "@/pages/home/index.vue"),
-		},
-		{
-			path: "/chat",
-			name: "chat",
-			component: () =>
-				import(/* webpackChunkName: "chat" */ "@/pages/chat/index.vue"),
-		},
-		{
-			path: "/sendGroup",
-			name: "sendGroup",
+			path: "/designer",
+			name: "designer",
 			component: () =>
 				import(
-					/* webpackChunkName: "sendGroup" */ "@/pages/sendGroup/index.vue"
+					/* webpackChunkName: "designer" */ "@/pages/designer/index.vue"
 				),
 		},
 		{
-			path: "/chatRoom",
-			name: "chatRoom",
+			path: "/previewDesigner",
+			name: "previewDesigner",
 			component: () =>
 				import(
-					/* webpackChunkName: "chatRoom" */ "@/pages/chatRoom/index.vue"
+					/* webpackChunkName: "previewDesigner" */ "@/pages/previewDesigner/index.vue"
 				),
 		},
 	],

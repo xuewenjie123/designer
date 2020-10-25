@@ -1,8 +1,7 @@
 import axios from "axios"
-import { notification, message } from "ant-design-vue"
-import store from "../store"
+import { Toast } from "vant"
 import qs from "qs"
-let bulicurl = "/rongyunChat"
+let bulicurl = "/api"
 const instance = axios.create({
 	//创建axios实例，在这里可以设置请求的默认配置
 	timeout: 10000, // 设置超时时间10s
@@ -26,7 +25,12 @@ instance.interceptors.request.use(
 		if (config.method == "get") {
 			config.url += "?" + config.data
 		}
-		message.loading("加载中...", 0)
+		Toast.loading({
+			duration: 0,
+			message: "加载中...",
+			forbidClick: true,
+			loadingType: "spinner",
+		})
 		if (config.method == "post") {
 			config.params = {}
 		}
@@ -42,52 +46,39 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
 	(response) => {
 		console.log(response.config.url + "服务器返回数据", response.data)
-		message.destroy()
-		if (response.data.code == 0) {
+		Toast.clear()
+		if (response.data.status) {
 			//成功
-			return Promise.resolve(response.data)
+			return Promise.resolve(response.data.other)
 		} else {
-			notification.error({
-				message: "错误提示",
-				description: response.data.msg,
-				duration: 3,
-			})
-			return Promise.reject(response.data.msg)
+			Toast(response.data.message)
+			return Promise.reject(response.data.message)
 		}
 	},
 	(error) => {
-		message.destroy()
+		Toast.clear()
 		if (error.response) {
 			// 根据请求失败的http状态码去给用户相应的提示
 			let tips =
 				error.response.status in httpCode
 					? httpCode[error.response.status]
 					: error.response.data.message
-			notification.error({
-				message: "消息提示",
-				description: tips,
-				duration: 3,
-			})
+			Toast(tips)
 
 			return Promise.reject(error)
 		} else {
-			notification.error({
-				message: "消息提示",
-				description: "请求超时, 请刷新重试",
-				duration: 3,
-			})
+			Toast("请求超时, 请刷新重试")
 			return Promise.reject(new Error("请求超时, 请刷新重试"))
 		}
 	}
 )
 const ajax = (methodType, url, params = {}, config) => {
-	params.token = store.state.userInfo.token
+	params.token = "123456"
 	return new Promise((resolve, reject) => {
 		instance({
 			method: methodType,
 			url: `${bulicurl}${url}`,
 			data: qs.stringify(params),
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			...config,
 		})
 			.then((response) => {

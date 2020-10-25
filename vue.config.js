@@ -2,12 +2,12 @@ let devConfig = {
 	devServer: {
 		// 基本路径
 		proxy: {
-			"/rongyunChat": {
-				target: "https://zhanyou.ruijie.com.cn",
+			"/api": {
+				target: "https://custom.sw580.net",
 				ws: true,
 				changeOrigin: true,
 				pathRewrite: {
-					"^/rongyunChat": "", //需要rewrite的,
+					"^/api": "", //需要rewrite的,
 				},
 			},
 		},

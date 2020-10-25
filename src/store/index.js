@@ -4,23 +4,16 @@ import createPersistedState from "vuex-persistedstate"
 Vue.use(Vuex)
 const store = {
 	state: {
-		userInfo: {
-			token: "",
-		}, //用户信息
+		designerImg: "",
 	},
 	mutations: {
-		setUserInfo(state, data) {
-			state.userInfo = data
-		},
-		clearState(state) {
-			state = {
-				userInfo: {}, //用户信息
-			}
+		setDesignerImg(state, data) {
+			state.designerImg = data
 		},
 	},
 	actions: {},
 	getters: {
-		userInfo: (state) => state.userInfo,
+		designerImg: (state) => state.designerImg,
 	},
 	modules: {},
 }

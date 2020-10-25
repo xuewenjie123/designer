@@ -1,8 +1,9 @@
 .flex {
 	display: flex;
-	flex-direction: column;
 }
-
+.border-box{
+    box-sizing: border-box;
+}
 .flex-item {
 	flex: 1;
 }
