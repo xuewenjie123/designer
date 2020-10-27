@@ -6,20 +6,20 @@ import validateForm from "./utils/validateForm.js" //表单验证
 import "./assets/css/reset.css"
 import "./assets/js/rem.js" //rem
 import HeaderCommon from "./components/HeaderCommon.vue"
-import Vant from "vant"
 import "vant/lib/index.css"
-import { Swipe, SwipeItem, Lazyload } from "vant"
+import { Swipe, SwipeItem, Lazyload, Slider } from "vant"
 Vue.use(Lazyload)
 Vue.use(Swipe)
+Vue.use(Slider)
 Vue.use(SwipeItem)
-Vue.use(Vant)
-import { get, post } from "./utils/ajax.js"
+import { get, post, upFile } from "./utils/ajax.js"
 import VueDraggableResizable from "vue-draggable-resizable"
 import "vue-draggable-resizable/dist/VueDraggableResizable.css"
 Vue.component("vue-draggable-resizable", VueDraggableResizable)
 Vue.component("header-common", HeaderCommon)
 Vue.prototype.$get = get
 Vue.prototype.$post = post
+Vue.prototype.$upFile = upFile
 Vue.use(validateForm)
 Vue.config.productionTip = false
 new Vue({

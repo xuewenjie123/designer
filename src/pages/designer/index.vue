@@ -1,69 +1,94 @@
 <template>
 	<div class="designer flex flex-column">
 		<header-common title="开始定制"></header-common>
-		<div id="designerBox" class="designerBox flex-column flex all-center">
-			<img :src="imgUrl" style="width:300px" alt="" />
+
+		<div class="designerBox flex-column flex align-center">
 			<div
-				class="designerArea"
+				id="designerBox"
+				style="position:relative;"
 				:style="{
-					border:
-						eidtFinshed && (selectImgUrl || textContent)
-							? 'none'
-							: '1px dashed #000',
+					width: designAreaWidth + 'px',
+					height: designAreaHeight + 'px',
 				}"
 			>
-				<vue-draggable-resizable
+				<img id="designImg" :src="imgUrl" alt="" />
+				<img
+					@click="
+						selectzIndex = 1002
+						eidtFinshed = false
+					"
+					:src="designArea"
+					:style="{ zIndex: bgzIndex }"
+					style="position:absolute;left:0;top:0"
+					alt=""
+				/>
+				<div
+					class="designerArea"
 					:style="{
-						border: eidtFinshed ? 'none' : '1px dashed #000',
+						width: designAreaWidth + 'px',
+						height: designAreaHeight + 'px',
+						zIndex: selectzIndex,
 					}"
-					v-if="selectImgUrl"
-					@activated="onImgActivated"
-					:active="imgActive"
-					:preventDeactivation="true"
-					:w="40"
-					:h="20"
-					:x="imgx"
-					:y="imgy"
-					@dragging="onImgDrag"
-					@resizing="onResize"
-					:parent="true"
 				>
-					<img
-						style="width:100%;height:100%;"
-						:style="{ transform: 'rotate(' + imgdeg + 'deg)' }"
-						:src="selectImgUrl"
-					/>
-				</vue-draggable-resizable>
-				<vue-draggable-resizable
-					:style="{
-						border: eidtFinshed ? 'none' : '1px dashed #000',
-					}"
-					v-if="showDragText"
-					@activated="onTextActivated"
-					:active="textActive"
-					:preventDeactivation="true"
-					:w="90"
-					:h="20"
-					:x="textx"
-					:y="texty"
-					@dragging="onTextDrag"
-					@resizing="onResize"
-					:parent="true"
-				>
-					<p
+					<template v-if="selectImgList.length">
+						<vue-draggable-resizable
+							v-for="(item, index) in selectImgList"
+							:key="index"
+							:style="{
+								border: eidtFinshed
+									? 'none'
+									: '1px dashed #000',
+							}"
+							@activated="onImgActivated(item)"
+							:active="item.imgActive"
+							:preventDeactivation="true"
+							:w="40"
+							:h="20"
+							@dragging="onImgDrag"
+							@resizing="onResize"
+							:parent="true"
+						>
+							<img
+								style="width:100%;height:100%;"
+								:style="{
+									transform: 'rotate(' + item.imgdeg + 'deg)',
+								}"
+								:src="item.url"
+							/>
+						</vue-draggable-resizable>
+					</template>
+
+					<vue-draggable-resizable
 						:style="{
-							fontSize: fontSize,
-							color: currentColor,
-							fontFamily: fontFamily,
-							fontWeight: 'bold',
-							width: '100%',
-							height: '100%',
-							transform: 'rotate(' + textdeg + 'deg)',
+							border: eidtFinshed ? 'none' : '1px dashed #000',
 						}"
+						v-if="showDragText"
+						@activated="onTextActivated"
+						:active="textActive"
+						:preventDeactivation="true"
+						:w="90"
+						:h="20"
+						:x="textx"
+						:y="texty"
+						@dragging="onTextDrag"
+						@resizing="onResize"
+						:parent="true"
 					>
-						{{ textContent ? textContent : "Text in here" }}
-					</p>
-				</vue-draggable-resizable>
+						<p
+							:style="{
+								fontSize: fontSize,
+								color: currentColor,
+								fontFamily: fontFamily,
+								fontWeight: 'bold',
+								width: '100%',
+								height: '100%',
+								transform: 'rotate(' + textdeg + 'deg)',
+							}"
+						>
+							{{ textContent ? textContent : "Text in here" }}
+						</p>
+					</vue-draggable-resizable>
+				</div>
 			</div>
 		</div>
 		<div class="designerBottom">
@@ -92,7 +117,7 @@
 					</div>
 				</div>
 				<div
-					v-else
+					v-if="designerWhat == 'text' && !textfocus"
 					class="flex align-center"
 					style="width:100%;height:40px"
 				>
@@ -124,8 +149,8 @@
 					<div
 						class="flex all-center sourceBox flex-column"
 						v-for="item in source"
-						:key="item.id"
-						@click="selectImg(item.mainPic)"
+						:key="item.id + 'source'"
+						@click="selectImg(item)"
 					>
 						<img :src="item.mainPic" alt="" />
 						<span
@@ -163,6 +188,7 @@
 							@click="setFontFamily(item)"
 							:style="{
 								color: fontFamily == item ? '#c62336' : '#333',
+								fontFamily: item,
 							}"
 						>
 							{{ item }}
@@ -171,7 +197,7 @@
 
 					<template v-if="fontConfigId == 'fontSize'">
 						<div
-							class="flex all-center fontFamily"
+							class="flex align-end justify-center fontFamily"
 							v-for="item in fontSizeList"
 							:key="item.id"
 							@click="setFontSize(item)"
@@ -179,6 +205,7 @@
 								color: fontSize == item ? '#c62336' : '#333',
 							}"
 						>
+							<span :style="{ fontSize: item }">T</span>
 							{{ item }}
 						</div>
 					</template>
@@ -190,6 +217,8 @@
 						class="flex felx-row justify-around align-start border-box"
 					>
 						<textarea
+							@focus="textfocus = true"
+							@blur="textfocus = false"
 							class="content"
 							v-model="textContent"
 							maxlength="40"
@@ -240,7 +269,7 @@
 		</div>
 		<div
 			class="finshedBox"
-			v-if="eidtFinshed && (textContent || selectImgUrl)"
+			v-if="eidtFinshed && (textContent || selectImgList.length)"
 		>
 			<div @click="resetDesigner" class="finshedbtn flex all-center">
 				<span class="font12 _33hei">重做</span>
@@ -250,7 +279,7 @@
 			</div>
 		</div>
 		<div
-			v-if="!eidtFinshed && (textContent || selectImgUrl)"
+			v-if="!eidtFinshed && (textContent || selectImgList.length)"
 			class="sliderBox flex align-center flex-column"
 		>
 			<van-slider
@@ -260,11 +289,13 @@
 				active-color="#c52436"
 				bar-height="4px"
 			/>
+
 			<van-slider
 				active-color="#c52436"
 				v-else
 				vertical
-				v-model="imgdeg"
+				@change="onChangeSlider"
+				v-model="selectShowImg.imgdeg"
 				bar-height="4px"
 			/>
 			<div class="actionBox" @click="yesDesigner">
@@ -279,30 +310,34 @@
 
 <script>
 import { mapMutations } from "vuex"
-import { Dialog } from "vant"
+import { Dialog, Toast } from "vant"
 import html2canvas from "html2canvas"
 export default {
 	name: "login",
 	data() {
 		let { designerInfo } = this.$route.query
 		let info = JSON.parse(designerInfo)
+		console.log("info", info)
 		return {
+			designerInfo: info,
 			width: 0,
 			height: 0,
 			x: 0,
 			y: 0,
 			textActive: false,
-			imgActive: false,
 			textdeg: 0,
 			imgdeg: 0,
+			textfocus: false,
 			designerImg: "",
 			imgUrl: info.picUrl,
+			designArea: info.designArea,
 			designerWhat: "img",
 			classifyList: [], //素材类别
 			source: [], //素材列表
 			textContent: "", //当前正在编辑的文字
-			selectImgUrl: "", //当前选中的imgurl
+			selectImgList: [], //选择图片列表
 			eidtFinshed: false,
+			bgzIndex: 1000,
 			fontConfigList: [
 				{
 					name: "文字内容",
@@ -339,6 +374,7 @@ export default {
 				"Tahoma",
 				"Verdana",
 				"Droid Sans",
+				"Microsoft YaHei",
 			],
 			fontSizeList: ["14px", "18px", "24px"],
 			fontConfigWidth: "100%",
@@ -354,12 +390,35 @@ export default {
 			imgy: 50,
 			textx: 20,
 			texty: 20,
+			page: 1,
+			designAreaWidth: 0,
+			designAreaHeight: 0,
 			lastBackPressed: "",
 			status: "loading", //还有更多
+			fontJson: {
+				新宋体: "https://custom.sw580.net/scripts/fonts/SIMSUN.TTC",
+			},
+			selectzIndex: 1,
 		}
 	},
 	mounted() {
 		this.getClassifyList()
+		this.getFontList()
+		// imgUrl: info.picUrl,
+		// // 图片地址
+		// var img_url = this.designArea
+		// // 创建对象
+		// var img = new Image()
+		// // 改变图片的src
+		// img.src = img_url
+		// 打印
+		this.$nextTick(() => {
+			let designImg = document.getElementById("designImg")
+			console.log("offsetWidth", designImg.offsetWidth)
+			console.log("offsetWidth", designImg.offsetHeight)
+			this.designAreaWidth = designImg.offsetWidth
+			this.designAreaHeight = designImg.offsetHeight
+		})
 	},
 	methods: {
 		scrollImgList() {
@@ -390,39 +449,42 @@ export default {
 			this.designerWhat = "text"
 			this.showDragText = true
 			this.textActive = true
-			this.imgActive = false
+			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
+			this.selectzIndex = 1002
+			this.$forceUpdate()
 		},
 		setdesignerWhatImg() {
 			this.designerWhat = "img"
 			this.textActive = false
-			this.imgActive = true
 			this.eidtFinshed = false
+			this.selectzIndex = 1002
+			if (this.selectImgList.length) {
+				this.selectImgList[0].imgActive = true
+			}
+			this.$forceUpdate()
 		},
 		setFontSize(fontSize) {
 			this.fontSize = fontSize
 			this.textActive = true
-			this.imgActive = false
+			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
 		},
 		setFontFamily(fontFamily) {
 			this.fontFamily = fontFamily
 			this.textActive = true
-			this.imgActive = false
+			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
+			this.$forceUpdate()
 		},
 		setColor(currentColor) {
 			this.currentColor = currentColor
 			this.textActive = true
-			this.imgActive = false
+			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
+			this.$forceUpdate()
 		},
-		selectImg(url) {
-			this.selectImgUrl = url
-			this.eidtFinshed = false
-			this.imgActive = true
-			this.textActive = false
-		},
+
 		tabFontShowContent(id) {
 			this.fontConfigId = id
 			console.log("this.fontConfigId", this.fontConfigId)
@@ -436,14 +498,13 @@ export default {
 					break
 				case "fontFamily":
 					this.fontConfigWidth =
-						this.fontFamilyList.length * 80 + 30 + "px"
+						this.fontFamilyList.length * 80 + 50 + "px"
 					break
 				case "fontSize":
 					this.fontConfigWidth = this.fontSizeList.length * 80 + "px"
 					break
 			}
 		},
-
 		getClassifyList() {
 			this.$get("/front/materialsClass/get").then((result) => {
 				this.classifyList = result
@@ -452,10 +513,18 @@ export default {
 				this.getSourceList()
 			})
 		},
+		getFontList() {
+			this.$get("/front/designTool/view", {
+				id: 1,
+			}).then((result) => {
+				this.fontColorList = JSON.parse(result.fontColor)
+				this.fontSizeList = JSON.parse(result.fontSize)
+			})
+		},
 		getSourceList() {
 			this.$get("/front/materialsSource/get", {
 				"materialsClass.id": this.selectClassId,
-				Page: this.page,
+				page: this.page,
 				isMine: "0",
 				audit: "1",
 				status: "1",
@@ -472,6 +541,8 @@ export default {
 			this.selectClassId = id
 			this.source = []
 			this.page = 1
+			let wrapperEl = document.getElementById("innerContent")
+			wrapperEl.scrollLeft = 0
 			this.getSourceList()
 		},
 		onResize: function(x, y, width, height) {
@@ -488,29 +559,54 @@ export default {
 			this.imgx = x
 			this.imgy = y
 		},
-		onImgActivated() {
+		selectImg(item) {
+			this.selectShowImg = { url: item.mainPic, imgdeg: 0, ...item }
+			let len = this.selectImgList.length
+			if (this.eidtFinshed || !this.selectImgList.length) {
+				this.selectImgList.push(this.selectShowImg)
+				this.selectImgList[len].imgActive = true
+			} else {
+				this.selectImgList[len - 1] = this.selectShowImg
+				this.selectImgList[len - 1].imgActive = true
+			}
+
 			this.eidtFinshed = false
-			this.imgActive = true
+
 			this.textActive = false
+			this.selectzIndex = 1002
+			this.$forceUpdate()
 		},
+		onImgActivated(item) {
+			this.selectShowImg = item
+			this.eidtFinshed = false
+			this.selectImgList.forEach((item) => (item.imgActive = false))
+			item.imgActive = true
+			// this.select
+			this.imgdeg = item.imgdeg
+			console.log(this.selectImgList)
+			this.selectzIndex = 1002
+			this.textActive = false
+			this.$forceUpdate()
+		},
+
 		onTextActivated() {
 			this.eidtFinshed = false
-			console.log("onTextActivated")
+			this.selectzIndex = 1002
 			this.textActive = true
-			this.imgActive = false
+			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.$forceUpdate()
 		},
 		fineshDesigner() {
 			let content_html = document.getElementById("designerBox") //要转化的div
 			console.log("content_html", content_html)
 			let width = content_html.offsetWidth
 			let height = content_html.offsetHeight
-			let offsetTop = content_html.offsetTop
 			let canvas = document.createElement("canvas")
 			let context = canvas.getContext("2d")
 			console.log("window.devicePixelRatio", window.devicePixelRatio)
 			let scaleBy = Math.ceil(window.devicePixelRatio)
-			canvas.width = width * scaleBy
-			canvas.height = (height + offsetTop) * scaleBy
+			canvas.width = width
+			canvas.height = height
 			context.scale(scaleBy, scaleBy)
 			var opts = {
 				allowTaint: true, //允许加载跨域的图片
@@ -523,30 +619,49 @@ export default {
 				useCORS: true,
 			}
 			html2canvas(content_html, opts).then((canvas) => {
-				//  var imgurl = canvas.toBlob((blob)=>{
-				//   	//以时间戳作为文件名 实时区分不同文件 按需求自己定义就好
-				//     let filename = `${new Date().getTime()}.jpg`;
-				//   	//转换canvas图片数据格式为formData
-				//     let uploadFile = new File([blob], filename, {type: 'image/jpg'});
-				//     let formData = new FormData();
-				//     formData.append('file', uploadFile);
-				//     //将转换为formData的canvas图片 上传到服务器
-				//     this.$post('后台接口地址',formData).then(res=>{
-				//      //图片上传成功之后，再调用对应的其他接口，传递指定的参数
-				//     })
-				// })
-				console.log(canvas)
-				canvas.style.width = width + "px"
-				canvas.style.height = height + "px"
-				this.setDesignerImg(canvas.toDataURL())
-				this.$router.push("/previewDesigner")
+				let imgurl = canvas.toBlob((blob) => {
+					//以时间戳作为文件名 实时区分不同文件 按需求自己定义就好
+					let filename = `${new Date().getTime()}.jpg`
+					//转换canvas图片数据格式为formData
+					let uploadFile = new File([blob], filename, {
+						type: "image/jpg",
+					})
+					//将转换为formData的canvas图片 上传到服务器
+					// id
+					let sources = this.selectImgList.map((item) => {
+						return item.id
+					})
+					sources = sources.join(",")
+					// this.$upFile("/front/userDesignItem/save", {
+					// 	userDesignId: "1",
+					// 	designItemId: this.designerInfo.designItemId,
+					// 	"typeItem.id": this.designerInfo.id,
+					// 	picFile: uploadFile,
+					// 	sources,
+					// }).then((result) => {
+					// 	Toast("上传成功")
+					// 	this.setDesignerImg(canvas.toDataURL())
+					// 	this.$router.push("/previewDesigner")
+					// })
+					canvas.style.width = width + "px"
+					canvas.style.height = height + "px"
+					this.setDesignerImg(canvas.toDataURL())
+					this.$router.push("/previewDesigner")
+				})
+				// console.log(canvas)
+
 				// $("#grow-img").attr("src", canvas.toDataURL())
 			})
+		},
+		onChangeSlider(value) {
+			this.selectShowImg.imgdeg = value
 		},
 		yesDesigner() {
 			if (!this.textContent) {
 				this.showDragText = false
 			}
+			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.selectzIndex = 1
 			this.designerWhat = "img"
 			this.textActive = false
 			this.imgActive = false
@@ -557,19 +672,24 @@ export default {
 				title: "您确定要重做吗",
 				message: "取消您当前的设计？",
 			}).then(() => {
-				this.selectImgUrl = ""
+				this.selectImgList = this.selectImgList.filter((item) => {
+					return item.id != this.selectShowImg.id
+				})
 				this.textContent = ""
 				this.showDragText = false
+				this.selectzIndex = 1
 			})
 		},
 		delDesigner() {
-			if (this.imgActive) {
-				this.selectImgUrl = ""
-			} else {
+			if (this.textActive) {
 				this.textContent = ""
 				this.showDragText = false
+			} else {
+				this.selectImgList = this.selectImgList.filter((item) => {
+					return item.id != this.selectShowImg.id
+				})
 			}
-
+			this.selectzIndex = 1002
 			this.designerWhat = "img"
 		},
 	},
@@ -611,12 +731,14 @@ export default {
 .designerBox {
 	position: relative;
 	height: 60vh;
-	width: 350px;
+	width: 100%;
+	padding-top: 20px;
 }
 .designerBottom {
 	position: fixed;
 	bottom: 0;
 	width: 100%;
+	z-index: 1004;
 }
 .classifyWrapperOpa {
 	width: 100%;
@@ -678,9 +800,9 @@ export default {
 }
 
 .designerArea {
-	width: 120px;
-	height: 200px;
 	position: absolute;
+	top: 0;
+	left: 0;
 }
 .finshedbtn {
 	width: 40px;
@@ -695,6 +817,7 @@ export default {
 	right: 20px;
 	height: 100px;
 	width: 40px;
+	z-index: 1003;
 }
 .sliderBox {
 	position: absolute;
@@ -702,6 +825,7 @@ export default {
 	right: 20px;
 	height: 60vh;
 	width: 30px;
+	z-index: 1003;
 }
 .showImgConfig {
 	width: 80px;
@@ -710,6 +834,7 @@ export default {
 	border-bottom-right-radius: 15px;
 	position: fixed;
 	bottom: 250px;
+	z-index: 1003;
 	left: 0;
 }
 .showTextConfig {

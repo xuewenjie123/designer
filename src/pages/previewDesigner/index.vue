@@ -8,7 +8,7 @@
 			<h3 class="font18 bold" style="margin-bottom:20px;">
 				预览效果
 			</h3>
-			<img :src="designerImg" style="width:60%" alt="" />
+			<img :src="designerImg" style="width:100%" alt="" />
 			<!-- <van-swipe indicator-color="#ccc">
 				<van-swipe-item v-for="(item, index) in images" :key="index">
 					<img width="100%" v-lazy="item.picUrl" />
@@ -33,6 +33,13 @@ export default {
 		// this.getImgList()
 		console.log(this.designerImg)
 		this.images.push(this.designerImg)
+		let img = new Image()
+		// 改变图片的src
+		img.src = this.designerImg
+		this.$nextTick(() => {
+			console.log(img)
+			console.log(img.width)
+		})
 	},
 	methods: {
 		// getImgList() {

@@ -89,7 +89,35 @@ const ajax = (methodType, url, params = {}, config) => {
 			})
 	})
 }
+const upFileFetch = (url, methodsParams) => {
+	// 事件端口为11002  接口路径 /event/  ||  /electric/   //
+	let formData = new FormData()
+	methodsParams.token = "123456"
+	for (let attr in methodsParams) {
+		formData.append(attr, methodsParams[attr])
+	}
+	for (var [a, b] of formData.entries()) {
+		console.log(a, b)
+	}
+	return new Promise((resolve, reject) => {
+		instance({
+			method: "post",
+			url: `${bulicurl}${url}`,
+			data: formData,
+			headers: {
+				"Content-Type": "multipart/form-data",
+			},
+		})
+			.then((response) => {
+				resolve(response)
+			})
+			.catch((error) => {
+				reject(error)
+			})
+	})
+}
 export const get = (url, params, config = {}) =>
 	ajax("get", url, params, config)
 export const post = (url, params, config = {}) =>
 	ajax("post", url, params, config)
+export const upFile = (url, params) => upFileFetch(url, params)

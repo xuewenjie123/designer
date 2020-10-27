@@ -5,17 +5,28 @@
 			class="flex-item flex flex-column all-center"
 			style="background:#f5f5f5"
 		>
-			<h3 class="font18 bold" style="margin-bottom:20px;">
+			<h3
+				class="font18 bold"
+				style="margin-bottom:20px;"
+				@click="testDesigner"
+			>
 				左右滑动查看正/背面
 			</h3>
 			<van-swipe indicator-color="#ccc">
 				<van-swipe-item v-for="(item, index) in images" :key="index">
-					<img width="100%" v-lazy="item.picUrl" />
-					<div class="addDesigner" @click="goDesiner(item)">
-						<span
-							class="iconfont iconadd"
-							style="color:#fff;font-size:15px;line-height:20px;"
-						></span>
+					<div class="showImgBox">
+						<img width="100%" v-lazy="item.goodsImg" />
+						<img
+							class="addDesigner"
+							:style="{
+								top: item.y * scale + 'px',
+								left: item.x * scale + 'px',
+								width: item.width + 'px',
+							}"
+							@click="goDesiner(item)"
+							:src="item.picUrl"
+							alt=""
+						/>
 					</div>
 				</van-swipe-item>
 			</van-swipe>
@@ -28,18 +39,44 @@ export default {
 	data() {
 		return {
 			images: [],
+			clientWidth: 0,
+			scale: 1,
 		}
 	},
 	mounted() {
 		this.getImgList()
+		this.clientWidth = document.body.clientWidth
 	},
 	methods: {
 		getImgList() {
-			this.$get("/front/type/getItems", { typeId: 3 }).then((result) => {
-				this.images = result
-			})
+			this.$get("/front/type/getItems", { designId: 1 }).then(
+				(result) => {
+					this.images = result
+					// 图片地址
+					// 创建对象
+					let img = new Image()
+					// 改变图片的src
+					img.src = result[0].goodsImg
+					this.scale = this.clientWidth / img.width
+					console.log("scale", this.scale)
+					this.images.forEach((item) => {
+						img.src = result[0].picUrl
+						item.width = img.width * this.scale
+						console.log("item", item.width)
+					})
+					this.$forceUpdate()
+				}
+			)
 		},
 		goDesiner(designerInfo) {
+			let info = JSON.stringify(designerInfo)
+			this.$router.push("/designer?designerInfo=" + info)
+		},
+		testDesigner() {
+			let designerInfo = {
+				picUrl:
+					"https://custom.sw580.net/upload/images/materialsSource/2.png",
+			}
 			let info = JSON.stringify(designerInfo)
 			this.$router.push("/designer?designerInfo=" + info)
 		},
@@ -48,7 +85,7 @@ export default {
 </script>
 <style>
 .homeBox .van-swipe {
-	width: 80%;
+	width: 100%;
 	height: 6rem;
 }
 </style>
@@ -60,15 +97,9 @@ export default {
 }
 .addDesigner {
 	position: absolute;
-	left: 50%;
-	top: 50%;
-	margin-left: -10px;
-	margin-top: -10px;
-	width: 20px;
-	height: 20px;
-	background: #000;
-	border-radius: 50%;
-	line-height: 20px;
-	text-align: center;
+}
+.showImgBox {
+	position: relative;
+	width: 100%;
 }
 </style>
