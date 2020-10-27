@@ -40,7 +40,8 @@ export default {
 		return {
 			images: [],
 			clientWidth: 0,
-			scale: 1,
+			scaleZ: 1,
+			scaleB: 1,
 		}
 	},
 	mounted() {
@@ -51,20 +52,26 @@ export default {
 		getImgList() {
 			this.$get("/front/type/getItems", { designId: 1 }).then(
 				(result) => {
-					this.images = result
 					// 图片地址
 					// 创建对象
 					let img = new Image()
 					// 改变图片的src
+
 					img.src = result[0].goodsImg
 					this.scale = this.clientWidth / img.width
 					console.log("scale", this.scale)
-					this.images.forEach((item) => {
-						img.src = result[0].picUrl
-						item.width = img.width * this.scale
-						console.log("item", item.width)
-					})
-					this.$forceUpdate()
+					img.src = result[0].picUrl
+					result[0].width = img.width * this.scale
+
+					img.src = result[1].goodsImg
+					this.scale = this.clientWidth / img.width
+					console.log("scale", this.scale)
+					img.src = result[1].picUrl
+					result[1].width = img.width * this.scale
+					setTimeout(() => {
+						this.images = result
+						this.$forceUpdate()
+					}, 1000)
 				}
 			)
 		},

@@ -399,6 +399,7 @@ export default {
 				新宋体: "https://custom.sw580.net/scripts/fonts/SIMSUN.TTC",
 			},
 			selectzIndex: 1,
+			timer: null,
 		}
 	},
 	mounted() {
@@ -412,13 +413,16 @@ export default {
 		// // 改变图片的src
 		// img.src = img_url
 		// 打印
-		this.$nextTick(() => {
+		this.timer = setTimeout(() => {
 			let designImg = document.getElementById("designImg")
 			console.log("offsetWidth", designImg.offsetWidth)
 			console.log("offsetWidth", designImg.offsetHeight)
 			this.designAreaWidth = designImg.offsetWidth
 			this.designAreaHeight = designImg.offsetHeight
-		})
+		}, 1000)
+	},
+	beforeDestroy() {
+		this.timer && clearTimeout(this.timer)
 	},
 	methods: {
 		scrollImgList() {
@@ -607,7 +611,7 @@ export default {
 			let scaleBy = Math.ceil(window.devicePixelRatio)
 			canvas.width = width
 			canvas.height = height
-			context.scale(scaleBy, scaleBy)
+			// context.scale(scaleBy, scaleBy)
 			var opts = {
 				allowTaint: true, //允许加载跨域的图片
 				tainttest: true, //检测每张图片都已经加载完成
