@@ -13,4 +13,5 @@ export default {
 <style>
 @import url("//at.alicdn.com/t/font_2102205_tzkthn2ao6m.css");
 @import url("./common/common.css");
+@import url("./common/font.css");
 </style>
