@@ -14,7 +14,7 @@
 			</h3>
 			<van-swipe indicator-color="#ccc">
 				<van-swipe-item v-for="(item, index) in images" :key="index">
-					<div class="showImgBox">
+					<div class="showImgBox" @click="goDesiner(item)">
 						<img width="100%" v-lazy="item.goodsImg" />
 						<img
 							class="addDesigner"
@@ -23,7 +23,6 @@
 								left: item.x * scale + 'px',
 								width: item.width + 'px',
 							}"
-							@click="goDesiner(item)"
 							:src="item.picUrl"
 							alt=""
 						/>

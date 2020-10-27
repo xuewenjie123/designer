@@ -11,6 +11,28 @@
 					height: designAreaHeight + 'px',
 				}"
 			>
+				<div
+					class="canvasBox"
+					:style="{
+						width: designAreaWidth + 'px',
+						height: designAreaHeight + 'px',
+						zIndex: canvasZindex,
+					}"
+					@mousemove="beginPath($event)"
+				>
+					<canvas
+						id="canvas"
+						:width="designAreaWidth"
+						:height="designAreaHeight"
+						@mousedown="canvasDown($event)"
+						@mouseup="canvasUp($event)"
+						@mousemove="canvasMove($event)"
+						@touchstart="canvasDown($event)"
+						@touchend="canvasUp($event)"
+						@touchmove="canvasMove($event)"
+					>
+					</canvas>
+				</div>
 				<img id="designImg" :src="imgUrl" alt="" />
 				<img
 					@click="
@@ -268,6 +290,23 @@
 			>
 		</div>
 		<div
+			@click="setdesignerWhatTuYa"
+			:style="{
+				background: designerWhat == 'tuya' ? '#c62336' : '#e8eceb',
+			}"
+			class="showCanvasConfig flex flex-row align-center justify-around"
+		>
+			<span
+				class="iconfont icontuya"
+				:style="{ color: designerWhat == 'tuya' ? '#fff' : '#a2a6a5' }"
+			></span>
+			<span
+				class="font14 "
+				:style="{ color: designerWhat == 'tuya' ? '#fff' : '#a2a6a5' }"
+				>涂鸦</span
+			>
+		</div>
+		<div
 			class="finshedBox"
 			v-if="eidtFinshed && (textContent || selectImgList.length)"
 		>
@@ -279,7 +318,10 @@
 			</div>
 		</div>
 		<div
-			v-if="!eidtFinshed && (textContent || selectImgList.length)"
+			v-if="
+				!eidtFinshed &&
+					(textContent || selectImgList.length || preDrawAry.length)
+			"
 			class="sliderBox flex align-center flex-column"
 		>
 			<van-slider
@@ -319,6 +361,7 @@ export default {
 		let info = JSON.parse(designerInfo)
 		console.log("info", info)
 		return {
+			canvasZindex: 1,
 			designerInfo: info,
 			width: 0,
 			height: 0,
@@ -393,6 +436,7 @@ export default {
 			page: 1,
 			designAreaWidth: 0,
 			designAreaHeight: 0,
+			selectShowImg: {},
 			lastBackPressed: "",
 			status: "loading", //还有更多
 			fontJson: {
@@ -400,31 +444,237 @@ export default {
 			},
 			selectzIndex: 1,
 			timer: null,
+			colors: [
+				"#fef4ac",
+				"#0018ba",
+				"#ffc200",
+				"#f32f15",
+				"#cccccc",
+				"#5ab639",
+			],
+			brushs: [
+				{
+					className: "small fa fa-paint-brush",
+					lineWidth: 3,
+				},
+				{
+					className: "middle fa fa-paint-brush",
+					lineWidth: 6,
+				},
+				{
+					className: "big fa fa-paint-brush",
+					lineWidth: 12,
+				},
+			],
+			context: {},
+			canvasMoveUse: true,
+			// 存储当前表面状态数组-上一步
+			preDrawAry: [],
+			// 存储当前表面状态数组-下一步
+			nextDrawAry: [],
+			// 中间数组
+			middleAry: [],
+			// 配置参数
+			config: {
+				lineWidth: 1,
+				lineColor: "#f2849e",
+				shadowBlur: 2,
+			},
 		}
 	},
 	mounted() {
+		const canvas = document.querySelector("#canvas")
+		this.context = canvas.getContext("2d")
 		this.getClassifyList()
 		this.getFontList()
-		// imgUrl: info.picUrl,
-		// // 图片地址
-		// var img_url = this.designArea
-		// // 创建对象
-		// var img = new Image()
-		// // 改变图片的src
-		// img.src = img_url
-		// 打印
+		this.initDraw()
+		this.setCanvasStyle()
 		this.timer = setTimeout(() => {
 			let designImg = document.getElementById("designImg")
 			console.log("offsetWidth", designImg.offsetWidth)
 			console.log("offsetWidth", designImg.offsetHeight)
 			this.designAreaWidth = designImg.offsetWidth
 			this.designAreaHeight = designImg.offsetHeight
-		}, 1000)
+		}, 2000)
 	},
 	beforeDestroy() {
 		this.timer && clearTimeout(this.timer)
 	},
+	computed: {
+		controls() {
+			return [
+				{
+					title: "上一步",
+					action: "prev",
+					className: this.preDrawAry.length
+						? "active fa fa-reply"
+						: "fa fa-reply",
+				},
+				{
+					title: "下一步",
+					action: "next",
+					className: this.nextDrawAry.length
+						? "active fa fa-share"
+						: "fa fa-share",
+				},
+				{
+					title: "清除",
+					action: "clear",
+					className:
+						this.preDrawAry.length || this.nextDrawAry.length
+							? "active fa fa-trash"
+							: "fa fa-trash",
+				},
+			]
+		},
+	},
 	methods: {
+		isPc() {
+			const userAgentInfo = navigator.userAgent
+			const Agents = [
+				"Android",
+				"iPhone",
+				"SymbianOS",
+				"Windows Phone",
+				"iPad",
+				"iPod",
+			]
+			let flag = true
+			for (let v = 0; v < Agents.length; v++) {
+				if (userAgentInfo.indexOf(Agents[v]) > 0) {
+					flag = false
+					break
+				}
+			}
+			return flag
+		},
+		// 操作
+		controlCanvas(action) {
+			switch (action) {
+				case "prev":
+					if (this.preDrawAry.length) {
+						const popData = this.preDrawAry.pop()
+						const midData = this.middleAry[
+							this.preDrawAry.length + 1
+						]
+						this.nextDrawAry.push(midData)
+						this.context.putImageData(popData, 0, 0)
+					}
+					break
+				case "next":
+					if (this.nextDrawAry.length) {
+						const popData = this.nextDrawAry.pop()
+						const midData = this.middleAry[
+							this.middleAry.length - this.nextDrawAry.length - 2
+						]
+						this.preDrawAry.push(midData)
+						this.context.putImageData(popData, 0, 0)
+					}
+					break
+				case "clear":
+					this.context.clearRect(
+						0,
+						0,
+						this.context.canvas.width,
+						this.context.canvas.height
+					)
+					this.preDrawAry = []
+					this.nextDrawAry = []
+					this.middleAry = [this.middleAry[0]]
+					break
+			}
+		},
+		// 设置绘画配置
+		setCanvasStyle() {
+			this.context.lineWidth = this.config.lineWidth
+			this.context.shadowBlur = this.config.shadowBlur
+			this.context.shadowColor = this.config.lineColor
+			this.context.strokeStyle = this.config.lineColor
+		},
+		initDraw() {
+			this.designAreaWidth = designImg.offsetWidth
+			this.designAreaHeight = designImg.offsetHeight
+			const preData = this.context.getImageData(
+				0,
+				0,
+				this.designAreaWidth,
+				this.designAreaHeight
+			)
+			// 空绘图表面进栈
+			this.middleAry.push(preData)
+		},
+		beginPath(e) {
+			const canvas = document.querySelector("#canvas")
+			if (e.target !== canvas) {
+				console.log("beginPath")
+				this.context.beginPath()
+			}
+		},
+		canvasMove(e) {
+			if (this.canvasMoveUse) {
+				console.log("canvasMove")
+				const t = e.target
+				console.log(e.target)
+				let canvasX
+				let canvasY
+				console.log(this.isPc())
+				if (this.isPc()) {
+					canvasX = e.clientX - 20
+					canvasY = e.clientY - 40
+				} else {
+					console.log(e.changedTouches[0].clientX)
+					console.log(t.parentNode.offsetLeft)
+					canvasX = e.changedTouches[0].clientX - 20
+					canvasY = e.changedTouches[0].clientY - 40
+				}
+				this.context.lineTo(canvasX, canvasY)
+				this.context.stroke()
+			}
+		},
+		// mouseup
+		canvasUp(e) {
+			console.log("canvasUp")
+			const preData = this.context.getImageData(
+				0,
+				0,
+				this.designAreaWidth,
+				this.designAreaHeight
+			)
+			if (!this.nextDrawAry.length) {
+				// 当前绘图表面进栈
+				this.middleAry.push(preData)
+			} else {
+				this.middleAry = []
+				this.middleAry = this.middleAry.concat(this.preDrawAry)
+				this.middleAry.push(preData)
+				this.nextDrawAry = []
+			}
+			this.canvasMoveUse = false
+		},
+		// mousedown
+		canvasDown(e) {
+			console.log("canvasDown")
+			this.canvasMoveUse = true
+			// client是基于整个页面的坐标
+			// offset是cavas距离顶部以及左边的距离
+			console.log(e.target.parentNode.offsetLeft)
+			const canvasX = e.clientX - 20
+			const canvasY = e.clientY - 40
+			this.setCanvasStyle()
+			// 清除子路径
+			this.context.beginPath()
+			this.context.moveTo(canvasX, canvasY)
+			console.log("moveTo", canvasX, canvasY)
+			// 当前绘图表面状态
+			const preData = this.context.getImageData(
+				0,
+				0,
+				this.designAreaWidth,
+				this.designAreaHeight
+			)
+			// 当前绘图表面进栈
+			this.preDrawAry.push(preData)
+		},
 		scrollImgList() {
 			let scrollEl = document.getElementById("scrollEl")
 			let wrapperEl = document.getElementById("innerContent")
@@ -449,6 +699,15 @@ export default {
 			}
 		},
 		...mapMutations(["setDesignerImg"]),
+		setdesignerWhatTuYa() {
+			this.designerWhat = "tuya"
+			this.textActive = false
+			this.eidtFinshed = false
+			this.canvasZindex = 1002
+			this.selectzIndex = 1
+			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.$forceUpdate()
+		},
 		setdesignerWhatText() {
 			this.designerWhat = "text"
 			this.showDragText = true
@@ -456,6 +715,7 @@ export default {
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
 			this.selectzIndex = 1002
+			this.canvasZindex = 1
 			this.$forceUpdate()
 		},
 		setdesignerWhatImg() {
@@ -463,18 +723,21 @@ export default {
 			this.textActive = false
 			this.eidtFinshed = false
 			this.selectzIndex = 1002
+			this.canvasZindex = 1
 			if (this.selectImgList.length) {
 				this.selectImgList[0].imgActive = true
 			}
 			this.$forceUpdate()
 		},
 		setFontSize(fontSize) {
+			this.designerWhat = "text"
 			this.fontSize = fontSize
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
 		},
 		setFontFamily(fontFamily) {
+			this.designerWhat = "text"
 			this.fontFamily = fontFamily
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
@@ -482,6 +745,7 @@ export default {
 			this.$forceUpdate()
 		},
 		setColor(currentColor) {
+			this.designerWhat = "text"
 			this.currentColor = currentColor
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
@@ -542,6 +806,7 @@ export default {
 			})
 		},
 		setClassId(id) {
+			this.designerWhat = "img"
 			this.selectClassId = id
 			this.source = []
 			this.page = 1
@@ -564,6 +829,7 @@ export default {
 			this.imgy = y
 		},
 		selectImg(item) {
+			this.designerWhat = "img"
 			this.selectShowImg = { url: item.mainPic, imgdeg: 0, ...item }
 			let len = this.selectImgList.length
 			if (this.eidtFinshed || !this.selectImgList.length) {
@@ -578,9 +844,11 @@ export default {
 
 			this.textActive = false
 			this.selectzIndex = 1002
+			this.canvasZindex = 1
 			this.$forceUpdate()
 		},
 		onImgActivated(item) {
+			this.designerWhat = "img"
 			this.selectShowImg = item
 			this.eidtFinshed = false
 			this.selectImgList.forEach((item) => (item.imgActive = false))
@@ -589,13 +857,16 @@ export default {
 			this.imgdeg = item.imgdeg
 			console.log(this.selectImgList)
 			this.selectzIndex = 1002
+			this.canvasZindex = 1
 			this.textActive = false
 			this.$forceUpdate()
 		},
 
 		onTextActivated() {
+			this.designerWhat = "text"
 			this.eidtFinshed = false
 			this.selectzIndex = 1002
+			this.canvasZindex = 1
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.$forceUpdate()
@@ -636,21 +907,19 @@ export default {
 						return item.id
 					})
 					sources = sources.join(",")
-					// this.$upFile("/front/userDesignItem/save", {
-					// 	userDesignId: "1",
-					// 	designItemId: this.designerInfo.designItemId,
-					// 	"typeItem.id": this.designerInfo.id,
-					// 	picFile: uploadFile,
-					// 	sources,
-					// }).then((result) => {
-					// 	Toast("上传成功")
-					// 	this.setDesignerImg(canvas.toDataURL())
-					// 	this.$router.push("/previewDesigner")
-					// })
-					canvas.style.width = width + "px"
-					canvas.style.height = height + "px"
-					this.setDesignerImg(canvas.toDataURL())
-					this.$router.push("/previewDesigner")
+					this.$upFile("/front/userDesignItem/save", {
+						"userDesign.id": "1",
+						designItemId: this.designerInfo.designItemId,
+						"typeItem.id": this.designerInfo.id,
+						picFile: uploadFile,
+						sources,
+					}).then((result) => {
+						Toast("上传成功")
+						canvas.style.width = width + "px"
+						canvas.style.height = height + "px"
+						this.setDesignerImg(canvas.toDataURL())
+						this.$router.push("/previewDesigner")
+					})
 				})
 				// console.log(canvas)
 
@@ -666,6 +935,7 @@ export default {
 			}
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.selectzIndex = 1
+			this.canvasZindex = 2
 			this.designerWhat = "img"
 			this.textActive = false
 			this.imgActive = false
@@ -701,6 +971,12 @@ export default {
 </script>
 
 <style scoped>
+.canvasBox {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
 .submitBtn {
 	width: 80px;
 	background: #711101;
@@ -742,7 +1018,7 @@ export default {
 	position: fixed;
 	bottom: 0;
 	width: 100%;
-	z-index: 1004;
+	z-index: 1006;
 }
 .classifyWrapperOpa {
 	width: 100%;
@@ -821,7 +1097,7 @@ export default {
 	right: 20px;
 	height: 100px;
 	width: 40px;
-	z-index: 1003;
+	z-index: 1005;
 }
 .sliderBox {
 	position: absolute;
@@ -829,7 +1105,7 @@ export default {
 	right: 20px;
 	height: 60vh;
 	width: 30px;
-	z-index: 1003;
+	z-index: 1005;
 }
 .showImgConfig {
 	width: 80px;
@@ -837,8 +1113,8 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 250px;
-	z-index: 1003;
+	bottom: 300px;
+	z-index: 1005;
 	left: 0;
 }
 .showTextConfig {
@@ -849,5 +1125,16 @@ export default {
 	position: fixed;
 	bottom: 200px;
 	left: 0;
+	z-index: 1005;
+}
+.showCanvasConfig {
+	width: 80px;
+	height: 30px;
+	border-top-right-radius: 15px;
+	border-bottom-right-radius: 15px;
+	position: fixed;
+	bottom: 250px;
+	left: 0;
+	z-index: 1005;
 }
 </style>
