@@ -1,350 +1,509 @@
 <template>
-	<div class="designer flex flex-column">
+	<div class="designer ">
 		<header-common title="开始定制"></header-common>
-
-		<div class="designerBox flex-column flex align-center">
-			<div
-				id="designerBox"
-				style="position:relative;"
-				:style="{
-					width: designAreaWidth + 'px',
-					height: designAreaHeight + 'px',
-				}"
-			>
+		<div
+			style="width:100;position:relative"
+			:style="{ opacity: !loading ? 1 : 0 }"
+		>
+			<div class="designerBox flex-column flex align-center">
 				<div
-					class="canvasBox"
+					id="designerBox"
+					style="position:relative;left:0"
 					:style="{
 						width: designAreaWidth + 'px',
 						height: designAreaHeight + 'px',
-						zIndex: canvasZindex,
 					}"
-					@mousemove="beginPath($event)"
 				>
-					<canvas
-						id="canvas"
-						:width="designAreaWidth"
-						:height="designAreaHeight"
-						@mousedown="canvasDown($event)"
-						@mouseup="canvasUp($event)"
-						@mousemove="canvasMove($event)"
-						@touchstart="canvasDown($event)"
-						@touchend="canvasUp($event)"
-						@touchmove="canvasMove($event)"
+					<div
+						class="canvasBox"
+						:style="{
+							width: designAreaWidth + 'px',
+							height: designAreaHeight + 'px',
+							zIndex: canvasZindex,
+						}"
+						@mousemove="beginPath($event)"
 					>
-					</canvas>
-				</div>
-				<img id="designImg" :src="imgUrl" alt="" />
-				<img
-					@click="
-						selectzIndex = 1002
-						eidtFinshed = false
-					"
-					:src="designArea"
-					:style="{ zIndex: bgzIndex }"
-					style="position:absolute;left:0;top:0"
-					alt=""
-				/>
-				<div
-					class="designerArea"
-					:style="{
-						width: designAreaWidth + 'px',
-						height: designAreaHeight + 'px',
-						zIndex: selectzIndex,
-					}"
-				>
-					<template v-if="selectImgList.length">
+						<canvas
+							id="canvas"
+							:width="designAreaWidth"
+							:height="designAreaHeight"
+							@mousedown="canvasDown($event)"
+							@mouseup="canvasUp($event)"
+							@mousemove="canvasMove($event)"
+							@touchstart="canvasDown($event)"
+							@touchend="canvasUp($event)"
+							@touchmove="canvasMove($event)"
+						>
+						</canvas>
+					</div>
+					<img id="designImg" :src="imgUrl" alt="" />
+					<img
+						@click="
+							selectzIndex = 1002
+							eidtFinshed = false
+						"
+						:src="designArea"
+						:style="{ zIndex: bgzIndex }"
+						style="position:absolute;left:0;top:0"
+						alt=""
+					/>
+					<div
+						class="designerArea"
+						:style="{
+							width: designAreaWidth + 'px',
+							height: designAreaHeight + 'px',
+							zIndex: selectzIndex,
+						}"
+					>
+						<template v-if="selectImgList.length">
+							<vue-draggable-resizable
+								v-for="(item, index) in selectImgList"
+								:key="index"
+								:style="{
+									border: eidtFinshed
+										? 'none'
+										: '1px dashed #000',
+								}"
+								@activated="onImgActivated(item)"
+								:active="item.imgActive"
+								:preventDeactivation="true"
+								:w="40"
+								:h="20"
+                              
+								@dragging="onImgDrag"
+								@resizing="onResize"
+								:parent="true"
+							>
+								<img
+									style="width:100%;height:100%;"
+									:style="{
+										transform:
+											'rotate(' + item.imgdeg + 'deg)',
+									}"
+									:src="item.url"
+								/>
+							</vue-draggable-resizable>
+						</template>
+
 						<vue-draggable-resizable
-							v-for="(item, index) in selectImgList"
-							:key="index"
 							:style="{
 								border: eidtFinshed
 									? 'none'
 									: '1px dashed #000',
 							}"
-							@activated="onImgActivated(item)"
-							:active="item.imgActive"
+							v-if="showDragText"
+							@activated="onTextActivated"
+							:active="textActive"
 							:preventDeactivation="true"
-							:w="40"
+							:w="90"
 							:h="20"
-							@dragging="onImgDrag"
+							:x="textx"
+							:y="texty"
+							@dragging="onTextDrag"
 							@resizing="onResize"
 							:parent="true"
 						>
-							<img
-								style="width:100%;height:100%;"
+							<p
 								:style="{
-									transform: 'rotate(' + item.imgdeg + 'deg)',
+									fontSize: fontSize + 'px',
+									color: currentColor,
+									fontFamily: fontFamily,
+									fontWeight: 'bold',
+									width: '100%',
+									height: '100%',
+									transform: 'rotate(' + textdeg + 'deg)',
 								}"
-								:src="item.url"
-							/>
+							>
+								{{ textContent ? textContent : "Text in here" }}
+							</p>
 						</vue-draggable-resizable>
-					</template>
+					</div>
+				</div>
+			</div>
 
-					<vue-draggable-resizable
-						:style="{
-							border: eidtFinshed ? 'none' : '1px dashed #000',
-						}"
-						v-if="showDragText"
-						@activated="onTextActivated"
-						:active="textActive"
-						:preventDeactivation="true"
-						:w="90"
-						:h="20"
-						:x="textx"
-						:y="texty"
-						@dragging="onTextDrag"
-						@resizing="onResize"
-						:parent="true"
-					>
-						<p
-							:style="{
-								fontSize: fontSize,
-								color: currentColor,
-								fontFamily: fontFamily,
-								fontWeight: 'bold',
-								width: '100%',
-								height: '100%',
-								transform: 'rotate(' + textdeg + 'deg)',
-							}"
-						>
-							{{ textContent ? textContent : "Text in here" }}
-						</p>
-					</vue-draggable-resizable>
-				</div>
-			</div>
-		</div>
-		<div class="designerBottom">
-			<!-- <div class="classifyWrapperOpa"></div> -->
-			<div class="classifyWrapper">
-				<div
-					class="flex align-center"
-					:style="{ width: classifyWidth + 'px' }"
-					v-if="designerWhat == 'img'"
-				>
+			<div class="designerBottom">
+				<!-- <div class="classifyWrapperOpa"></div> -->
+				<div class="classifyWrapper">
 					<div
-						@click="setClassId(item.id)"
-						class="flex all-center classifyBox"
-						v-for="item in classifyList"
-						:key="item.id"
+						class="flex align-center"
+						:style="{ width: classifyWidth + 'px' }"
+						v-if="designerWhat == 'img'"
 					>
-						<span
-							:style="{
-								color:
-									selectClassId == item.id
-										? '#c62336'
-										: '#333',
-							}"
-							>{{ item.name }}</span
-						>
-					</div>
-				</div>
-				<div
-					v-if="designerWhat == 'text' && !textfocus"
-					class="flex align-center"
-					style="width:100%;height:40px"
-				>
-					<div
-						@click="tabFontShowContent(item.id)"
-						class="flex all-center flex-item fontConfigBox border-box"
-						v-for="item in fontConfigList"
-						:key="item.id"
-					>
-						<span
-							:style="{
-								color:
-									fontConfigId == item.id
-										? '#c62336'
-										: '#333',
-							}"
-							>{{ item.name }}</span
-						>
-					</div>
-				</div>
-			</div>
-			<div class="innerContent" id="innerContent" @scroll="scrollImgList">
-				<div
-					v-if="designerWhat == 'img'"
-					class="flex align-center"
-					id="scrollEl"
-					:style="{ width: sourceWidth + 'px', height: 120 + 'px' }"
-				>
-					<div
-						class="flex all-center sourceBox flex-column"
-						v-for="item in source"
-						:key="item.id + 'source'"
-						@click="selectImg(item)"
-					>
-						<img :src="item.mainPic" alt="" />
-						<span
-							style="font-size:12px;color:#333;margin-top:10px;"
-							>{{ item.name }}</span
-						>
-					</div>
-				</div>
-				<div
-					v-else
-					style="height:120px"
-					class="flex align-center"
-					:style="{ width: fontConfigWidth }"
-				>
-					<template v-if="fontConfigId == 'color'">
 						<div
-							class="flex fontColorBox"
-							v-for="(item, index) in fontColorList"
-							:key="index"
-							@click="setColor(item)"
-							:style="{
-								background: item,
-								transform: `translateY(
+							@click="setClassId(item.id)"
+							class="flex all-center classifyBox"
+							v-for="item in classifyList"
+							:key="item.id"
+						>
+							<span
+								:style="{
+									color:
+										selectClassId == item.id
+											? '#c62336'
+											: '#333',
+								}"
+								>{{ item.name }}</span
+							>
+						</div>
+					</div>
+					<div
+						v-if="designerWhat == 'text' && !textfocus"
+						class="flex align-center"
+						style="width:100%;height:40px"
+					>
+						<div
+							@click="tabFontShowContent(item.id)"
+							class="flex all-center flex-item fontConfigBox border-box"
+							v-for="item in fontConfigList"
+							:key="item.id"
+						>
+							<span
+								:style="{
+									color:
+										fontConfigId == item.id
+											? '#c62336'
+											: '#333',
+								}"
+								>{{ item.name }}</span
+							>
+						</div>
+					</div>
+					<div
+						v-if="designerWhat == 'tuya'"
+						class="flex align-center"
+						style="width:100%;height:40px"
+					>
+						<div
+							@click="tabCanvasShowContent(item.id)"
+							class="flex all-center flex-item fontConfigBox border-box"
+							v-for="item in canvasConfigList"
+							:key="item.id"
+						>
+							<span
+								:style="{
+									color:
+										canvasConfigId == item.id
+											? '#c62336'
+											: '#333',
+								}"
+								>{{ item.name }}</span
+							>
+						</div>
+					</div>
+				</div>
+				<div
+					class="innerContent"
+					id="innerContent"
+					@scroll="scrollImgList"
+				>
+					<div
+						v-if="designerWhat == 'img'"
+						class="flex align-center"
+						id="scrollEl"
+						:style="{
+							width: sourceWidth + 'px',
+							height: 120 + 'px',
+						}"
+					>
+						<div
+							class="flex all-center sourceBox flex-column"
+							v-for="item in source"
+							:key="item.id + 'source'"
+							@click="selectImg(item)"
+						>
+							<img :src="item.mainPic" alt="" />
+							<span
+								style="font-size:12px;color:#333;margin-top:10px;"
+								>{{ item.name }}</span
+							>
+						</div>
+					</div>
+					<div
+						v-if="designerWhat == 'text'"
+						style="height:120px"
+						class="flex align-center"
+						:style="{ width: fontConfigWidth }"
+					>
+						<template v-if="fontConfigId == 'color'">
+							<div
+								class="flex fontColorBox"
+								v-for="(item, index) in fontColorList"
+								:key="index"
+								@click="setColor(item)"
+								:style="{
+									background: item,
+									transform: `translateY(
 									${currentColor == item ? '-10px' : '0'}
 								)`,
-							}"
-							style="{ transform: 'rotate(' + textdeg + 'deg)' }"
-						></div>
-					</template>
-					<template v-if="fontConfigId == 'fontFamily'">
-						<div
-							class="flex all-center fontFamily"
-							v-for="(item, index) in fontFamilyList"
-							:key="index + 'fontFamliy'"
-							@click="setFontFamily(item)"
-							:style="{
-								color: fontFamily == item ? '#c62336' : '#333',
-								fontFamily: item,
-							}"
-						>
-							{{ item }}
-						</div>
-					</template>
+								}"
+								style="{ transform: 'rotate(' + textdeg + 'deg)' }"
+							></div>
+						</template>
+						<template v-if="fontConfigId == 'fontFamily'">
+							<div
+								class="flex all-center fontFamily"
+								v-for="(item, index) in fontFamilyList"
+								:key="index + 'fontFamliy'"
+								@click="setFontFamily(item)"
+								:style="{
+									color:
+										fontFamily == item ? '#c62336' : '#333',
+									fontFamily: item,
+								}"
+							>
+								{{ item }}
+							</div>
+						</template>
 
-					<template v-if="fontConfigId == 'fontSize'">
-						<div
-							class="flex align-end justify-center fontFamily"
-							v-for="item in fontSizeList"
-							:key="item.id"
-							@click="setFontSize(item)"
-							:style="{
-								color: fontSize == item ? '#c62336' : '#333',
-							}"
-						>
-							<span :style="{ fontSize: item }">T</span>
-							{{ item }}
-						</div>
-					</template>
+						<template v-if="fontConfigId == 'fontSize'">
+							<div
+								class="flex align-end justify-center fontFamily"
+								v-for="item in fontSizeList"
+								:key="item.id"
+								@click="setFontSize(item)"
+								:style="{
+									color:
+										fontSize == item ? '#c62336' : '#333',
+								}"
+							>
+								<span :style="{ fontSize: item + 'px' }"
+									>T</span
+								>
+								{{ item }}
+							</div>
+						</template>
 
-					<div
-						v-if="fontConfigId == 'content'"
-						:style="{ width: fontConfigWidth }"
-						style="height:120px;padding-top:20px"
-						class="flex felx-row justify-around align-start border-box"
-					>
-						<textarea
-							@focus="textfocus = true"
-							@blur="textfocus = false"
-							class="content"
-							v-model="textContent"
-							maxlength="40"
-							placeholder="点这里可以输入文字内容哦"
-						></textarea>
-						<!-- <div class="flex all-center submitBtn">
+						<div
+							v-if="fontConfigId == 'content'"
+							:style="{ width: fontConfigWidth }"
+							style="height:120px;padding-top:20px"
+							class="flex felx-row justify-around align-start border-box"
+						>
+							<textarea
+								@focus="textfocus = true"
+								@blur="textfocus = false"
+								class="content"
+								v-model="textContent"
+								maxlength="40"
+								placeholder="点这里可以输入文字内容哦"
+							></textarea>
+							<!-- <div class="flex all-center submitBtn">
 							<span class="font14 bold bai">提交</span>
 						</div> -->
+						</div>
+					</div>
+
+					<div
+						v-if="designerWhat == 'tuya'"
+						style="height:120px"
+						class="flex align-center"
+						:style="{ width: canvasConfigWidth }"
+					>
+						<template v-if="canvasConfigId == 'tuyaColor'">
+							<!-- @click="setColor(item)" -->
+							<div
+								class="flex fontColorBox"
+								v-for="(item, index) in brushColor"
+								:key="index"
+								@click="setCanvasColor(item)"
+								:style="{
+									background: item,
+									transform: `translateY(
+									${config.lineColor === item ? '-10px' : '0'}
+								)`,
+								}"
+							></div>
+						</template>
+
+						<template v-if="canvasConfigId == 'tuyaSize'">
+							<div
+								class="flex align-end justify-center fontFamily"
+								v-for="item in brushs"
+								:key="item.lineWidth"
+								@click="setBrush(item.lineWidth)"
+								:style="{
+									color:
+										config.lineWidth === item.lineWidth
+											? '#c62336'
+											: '#333',
+								}"
+							>
+								<span
+									:class="item.className"
+									:style="{ fontSize: item.fontSize + 'px' }"
+								></span>
+								{{ item.lineWidth }}
+							</div>
+						</template>
+
+						<template v-if="canvasConfigId == 'tuyaControls'">
+							<div
+								class="flex align-end justify-center fontFamily"
+								v-for="item in controls"
+								:key="item.action"
+								@click="controlCanvas(item.action)"
+							>
+								<span :class="item.className"></span>
+							</div>
+						</template>
+					</div>
+					<div
+						v-if="designerWhat == 'rubber'"
+						style="height:120px"
+						class="flex align-center"
+						:style="{ width: rubberConfigWidth }"
+					>
+						<div
+							class="flex align-end justify-center fontFamily"
+							v-for="item in eraserSize"
+							:key="item + 'rubber'"
+							@click="setRubberWidth(item)"
+							:style="{
+								color:
+									rubberWidth === item ? '#c62336' : '#333',
+							}"
+						>
+							<span
+								class="iconfont iconxiangpica"
+								:style="{ fontSize: item * 2.8 + 'px' }"
+							></span>
+							{{ item }}
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<div
-			@click="setdesignerWhatImg"
-			:style="{
-				background: designerWhat == 'img' ? '#c62336' : '#e8eceb',
-			}"
-			class="showImgConfig flex flex-row align-center justify-around"
-		>
-			<span
-				class="iconfont icontupian"
-				:style="{ color: designerWhat == 'img' ? '#fff' : '#a2a6a5' }"
-			></span>
-			<span
-				class="font14 "
-				:style="{ color: designerWhat == 'img' ? '#fff' : '#a2a6a5' }"
-				>图片</span
+			<div
+				@click="setdesignerWhatImg"
+				:style="{
+					background: designerWhat == 'img' ? '#c62336' : '#e8eceb',
+				}"
+				class="showImgConfig flex flex-row align-center justify-around"
 			>
-		</div>
-		<div
-			@click="setdesignerWhatText"
-			:style="{
-				background: designerWhat == 'text' ? '#c62336' : '#e8eceb',
-			}"
-			class="showTextConfig flex flex-row align-center justify-around"
-		>
-			<span
-				class="bold font18"
-				:style="{ color: designerWhat == 'text' ? '#fff' : '#a2a6a5' }"
-				>Aa</span
-			>
-			<span
-				class="font14"
-				:style="{ color: designerWhat == 'text' ? '#fff' : '#a2a6a5' }"
-				>文字</span
-			>
-		</div>
-		<div
-			@click="setdesignerWhatTuYa"
-			:style="{
-				background: designerWhat == 'tuya' ? '#c62336' : '#e8eceb',
-			}"
-			class="showCanvasConfig flex flex-row align-center justify-around"
-		>
-			<span
-				class="iconfont icontuya"
-				:style="{ color: designerWhat == 'tuya' ? '#fff' : '#a2a6a5' }"
-			></span>
-			<span
-				class="font14 "
-				:style="{ color: designerWhat == 'tuya' ? '#fff' : '#a2a6a5' }"
-				>涂鸦</span
-			>
-		</div>
-		<div
-			class="finshedBox"
-			v-if="eidtFinshed && (textContent || selectImgList.length)"
-		>
-			<div @click="resetDesigner" class="finshedbtn flex all-center">
-				<span class="font12 _33hei">重做</span>
+				<span
+					class="iconfont icontupian"
+					:style="{
+						color: designerWhat == 'img' ? '#fff' : '#a2a6a5',
+					}"
+				></span>
+				<span
+					class="font14 "
+					:style="{
+						color: designerWhat == 'img' ? '#fff' : '#a2a6a5',
+					}"
+					>图片</span
+				>
 			</div>
-			<div @click="fineshDesigner" class="finshedbtn flex all-center">
-				<span class="font12 _33hei">完成</span>
+			<div
+				@click="setdesignerWhatText"
+				:style="{
+					background: designerWhat == 'text' ? '#c62336' : '#e8eceb',
+				}"
+				class="showTextConfig flex flex-row align-center justify-around"
+			>
+				<span
+					class="bold font18"
+					:style="{
+						color: designerWhat == 'text' ? '#fff' : '#a2a6a5',
+					}"
+					>Aa</span
+				>
+				<span
+					class="font14"
+					:style="{
+						color: designerWhat == 'text' ? '#fff' : '#a2a6a5',
+					}"
+					>文字</span
+				>
 			</div>
-		</div>
-		<div
-			v-if="
-				!eidtFinshed &&
-					(textContent || selectImgList.length || preDrawAry.length)
-			"
-			class="sliderBox flex align-center flex-column"
-		>
-			<van-slider
-				v-if="textActive"
-				vertical
-				v-model="textdeg"
-				active-color="#c52436"
-				bar-height="4px"
-			/>
 
-			<van-slider
-				active-color="#c52436"
-				v-else
-				vertical
-				@change="onChangeSlider"
-				v-model="selectShowImg.imgdeg"
-				bar-height="4px"
-			/>
-			<div class="actionBox" @click="yesDesigner">
-				<span class="iconfont iconduihao"></span>
+			<div
+				@click="setdesignerWhatTuYa"
+				:style="{
+					background: designerWhat == 'tuya' ? '#c62336' : '#e8eceb',
+				}"
+				class="showCanvasConfig flex flex-row align-center justify-around"
+			>
+				<span
+					class="iconfont icontuya"
+					:style="{
+						color: designerWhat == 'tuya' ? '#fff' : '#a2a6a5',
+					}"
+				></span>
+				<span
+					class="font14 "
+					:style="{
+						color: designerWhat == 'tuya' ? '#fff' : '#a2a6a5',
+					}"
+					>涂鸦</span
+				>
 			</div>
-			<div class="actionBox" @click="delDesigner">
-				<span class="iconfont iconshanchu"></span>
+
+			<div
+				@click="setdesignerWhatRubber"
+				:style="{
+					background:
+						designerWhat == 'rubber' ? '#c62336' : '#e8eceb',
+				}"
+				class="showRubberConfig flex flex-row align-center justify-around"
+			>
+				<span
+					class="iconfont iconxiangpica"
+					:style="{
+						color: designerWhat == 'rubber' ? '#fff' : '#a2a6a5',
+					}"
+				></span>
+				<span
+					class="font14 "
+					:style="{
+						color: designerWhat == 'rubber' ? '#fff' : '#a2a6a5',
+					}"
+					>橡皮擦</span
+				>
+			</div>
+
+			<div
+				class="finshedBox"
+				v-if="eidtFinshed && (textContent || selectImgList.length)"
+			>
+				<div @click="resetDesigner" class="finshedbtn flex all-center">
+					<span class="font12 _33hei">重做</span>
+				</div>
+				<div @click="fineshDesigner" class="finshedbtn flex all-center">
+					<span class="font12 _33hei">完成</span>
+				</div>
+			</div>
+			<div
+				v-if="
+					!eidtFinshed &&
+						(textContent ||
+							selectImgList.length ||
+							preDrawAry.length)
+				"
+				class="sliderBox flex align-center flex-column"
+			>
+				<van-slider
+					v-if="textActive"
+					vertical
+					v-model="textdeg"
+					active-color="#c52436"
+					bar-height="4px"
+				/>
+
+				<van-slider
+					active-color="#c52436"
+					v-else
+					vertical
+					@change="onChangeSlider"
+					v-model="selectShowImg.imgdeg"
+					bar-height="4px"
+				/>
+				<div class="actionBox" @click="yesDesigner">
+					<span class="iconfont iconduihao"></span>
+				</div>
+				<div class="actionBox" @click="delDesigner">
+					<span class="iconfont iconshanchu"></span>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -357,14 +516,19 @@ import html2canvas from "html2canvas"
 export default {
 	name: "login",
 	data() {
+		Toast.loading({
+			duration: 0,
+			message: "加载中...",
+			forbidClick: true,
+			loadingType: "spinner",
+		})
 		let { designerInfo } = this.$route.query
 		let info = JSON.parse(designerInfo)
 		console.log("info", info)
 		return {
+			loading: true,
 			canvasZindex: 1,
 			designerInfo: info,
-			width: 0,
-			height: 0,
 			x: 0,
 			y: 0,
 			textActive: false,
@@ -412,12 +576,13 @@ export default {
 				"#aeb23b",
 			],
 			fontFamilyList: [
-				"Arial",
-				"Helvetica",
-				"Tahoma",
-				"Verdana",
-				"Droid Sans",
-				"Microsoft YaHei",
+				"新宋体",
+				"楷体",
+				"黑体",
+				"仿宋",
+				"ANDLSO",
+				"BATANG",
+				"繁体",
 			],
 			fontSizeList: ["14px", "18px", "24px"],
 			fontConfigWidth: "100%",
@@ -434,8 +599,8 @@ export default {
 			textx: 20,
 			texty: 20,
 			page: 1,
-			designAreaWidth: 0,
-			designAreaHeight: 0,
+			designAreaWidth: 338,
+			designAreaHeight: 338,
 			selectShowImg: {},
 			lastBackPressed: "",
 			status: "loading", //还有更多
@@ -444,7 +609,7 @@ export default {
 			},
 			selectzIndex: 1,
 			timer: null,
-			colors: [
+			brushColor: [
 				"#fef4ac",
 				"#0018ba",
 				"#ffc200",
@@ -455,17 +620,21 @@ export default {
 			brushs: [
 				{
 					className: "small fa fa-paint-brush",
-					lineWidth: 3,
+					lineWidth: 1,
+					fontSize: 12,
 				},
 				{
 					className: "middle fa fa-paint-brush",
 					lineWidth: 6,
+					fontSize: 16,
 				},
 				{
 					className: "big fa fa-paint-brush",
 					lineWidth: 12,
+					fontSize: 20,
 				},
 			],
+			rubberConfigWidth: "100%",
 			context: {},
 			canvasMoveUse: true,
 			// 存储当前表面状态数组-上一步
@@ -480,21 +649,36 @@ export default {
 				lineColor: "#f2849e",
 				shadowBlur: 2,
 			},
+			canvasConfigList: [
+				{ name: "画笔大小", id: "tuyaSize" },
+				{ name: "画笔颜色", id: "tuyaColor" },
+				{ name: "操作", id: "tuyaControls" },
+			],
+			canvasConfigId: "tuyaSize",
+			canvasConfigWidth: "100%",
+			eraserSize: [5, 10, 20],
+			rubberWidth: 5,
 		}
 	},
 	mounted() {
 		const canvas = document.querySelector("#canvas")
 		this.context = canvas.getContext("2d")
-		this.getClassifyList()
-		this.getFontList()
-		this.initDraw()
-		this.setCanvasStyle()
+		this.getClassifyList("first")
+		this.getFontList("first")
+		this.getbrushList("first")
+		this.getEraserList("first")
 		this.timer = setTimeout(() => {
 			let designImg = document.getElementById("designImg")
 			console.log("offsetWidth", designImg.offsetWidth)
 			console.log("offsetWidth", designImg.offsetHeight)
 			this.designAreaWidth = designImg.offsetWidth
 			this.designAreaHeight = designImg.offsetHeight
+			this.$nextTick(() => {
+				this.initDraw()
+				this.setCanvasStyle()
+				this.loading = false
+				Toast.clear()
+			})
 		}, 2000)
 	},
 	beforeDestroy() {
@@ -550,6 +734,7 @@ export default {
 		},
 		// 操作
 		controlCanvas(action) {
+			console.log(action)
 			switch (action) {
 				case "prev":
 					if (this.preDrawAry.length) {
@@ -627,8 +812,19 @@ export default {
 					canvasX = e.changedTouches[0].clientX - 20
 					canvasY = e.changedTouches[0].clientY - 40
 				}
-				this.context.lineTo(canvasX, canvasY)
-				this.context.stroke()
+				if (this.designerWhat == "rubber") {
+					this.context.save()
+					this.context.clearRect(
+						canvasX,
+						canvasY - 20,
+						this.rubberWidth,
+						this.rubberWidth
+					)
+					this.context.restore()
+				} else {
+					this.context.lineTo(canvasX, canvasY)
+					this.context.stroke()
+				}
 			}
 		},
 		// mouseup
@@ -676,29 +872,40 @@ export default {
 			this.preDrawAry.push(preData)
 		},
 		scrollImgList() {
-			let scrollEl = document.getElementById("scrollEl")
-			let wrapperEl = document.getElementById("innerContent")
-			let scrollLeft = wrapperEl.scrollLeft
-			let scrollWidth = scrollEl.offsetWidth
-			let wrapWidth = wrapperEl.offsetWidth
-			// console.log("wrapperEl.scrollLeft", wrapperEl.scrollLeft);
-			// console.log("scrollEl.offsetWidth", scrollEl.offsetWidth);
-			// console.log("wrapperEl.offsetWidth", wrapperEl.offsetWidth);
-			if (scrollWidth - wrapWidth - scrollLeft < 2) {
-				if (
-					this.lastBackPressed &&
-					this.lastBackPressed + 2000 >= new Date().getTime()
-				) {
-					return false
-				}
-				this.lastBackPressed = new Date().getTime()
-				if (this.status != "noMore" && this.status != "loading") {
-					this.status = "loading"
-					this.getSourceList()
+			if (this.designerWhat == "img") {
+				let scrollEl = document.getElementById("scrollEl")
+				let wrapperEl = document.getElementById("innerContent")
+				let scrollLeft = wrapperEl.scrollLeft
+				let scrollWidth = scrollEl.offsetWidth
+				let wrapWidth = wrapperEl.offsetWidth
+				// console.log("wrapperEl.scrollLeft", wrapperEl.scrollLeft);
+				// console.log("scrollEl.offsetWidth", scrollEl.offsetWidth);
+				// console.log("wrapperEl.offsetWidth", wrapperEl.offsetWidth);
+				if (scrollWidth - wrapWidth - scrollLeft < 2) {
+					if (
+						this.lastBackPressed &&
+						this.lastBackPressed + 2000 >= new Date().getTime()
+					) {
+						return false
+					}
+					this.lastBackPressed = new Date().getTime()
+					if (this.status != "noMore" && this.status != "loading") {
+						this.status = "loading"
+						this.getSourceList()
+					}
 				}
 			}
 		},
 		...mapMutations(["setDesignerImg"]),
+		setdesignerWhatRubber() {
+			this.designerWhat = "rubber"
+			this.textActive = false
+			this.eidtFinshed = false
+			this.canvasZindex = 1002
+			this.selectzIndex = 1
+			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.$forceUpdate()
+		},
 		setdesignerWhatTuYa() {
 			this.designerWhat = "tuya"
 			this.textActive = false
@@ -752,10 +959,67 @@ export default {
 			this.eidtFinshed = false
 			this.$forceUpdate()
 		},
-
+		setCanvasColor(color) {
+			this.config.lineColor = color
+		},
+		// 设置笔刷大小
+		setBrush(lineWidth) {
+			this.config.lineWidth = lineWidth
+		},
+		setRubberWidth(rubberWidth) {
+			this.rubberWidth = rubberWidth
+		},
+		// 操作
+		controlCanvas(action) {
+			switch (action) {
+				case "prev":
+					if (this.preDrawAry.length) {
+						const popData = this.preDrawAry.pop()
+						const midData = this.middleAry[
+							this.preDrawAry.length + 1
+						]
+						this.nextDrawAry.push(midData)
+						this.context.putImageData(popData, 0, 0)
+					}
+					break
+				case "next":
+					if (this.nextDrawAry.length) {
+						const popData = this.nextDrawAry.pop()
+						const midData = this.middleAry[
+							this.middleAry.length - this.nextDrawAry.length - 2
+						]
+						this.preDrawAry.push(midData)
+						this.context.putImageData(popData, 0, 0)
+					}
+					break
+				case "clear":
+					this.context.clearRect(
+						0,
+						0,
+						this.context.canvas.width,
+						this.context.canvas.height
+					)
+					this.preDrawAry = []
+					this.nextDrawAry = []
+					this.middleAry = [this.middleAry[0]]
+					break
+			}
+		},
+		tabCanvasShowContent(id) {
+			this.canvasConfigId = id
+			switch (id) {
+				case "tuyaSize":
+					this.canvasConfigWidth = this.brushs.length * 70 + 10 + "px"
+					break
+				case "tuyaColor":
+					console.log(this.brushColor)
+					this.canvasConfigWidth =
+						this.brushColor.length * 70 + 10 + "px"
+					break
+			}
+		},
 		tabFontShowContent(id) {
 			this.fontConfigId = id
-			console.log("this.fontConfigId", this.fontConfigId)
 			switch (id) {
 				case "content":
 					this.fontConfigWidth = "100%"
@@ -773,31 +1037,80 @@ export default {
 					break
 			}
 		},
-		getClassifyList() {
-			this.$get("/front/materialsClass/get").then((result) => {
+		getClassifyList(first) {
+			this.$get(
+				"/front/materialsClass/get",
+				{},
+				{ noshowLoading: first ? true : false }
+			).then((result) => {
 				this.classifyList = result
 				this.classifyWidth = result.length * 80
 				this.selectClassId = result[0].id
-				this.getSourceList()
+				this.getSourceList(first)
 			})
 		},
-		getFontList() {
-			this.$get("/front/designTool/view", {
-				id: 1,
-			}).then((result) => {
+		getFontList(first) {
+			this.$get(
+				"/front/designTool/view",
+				{
+					id: 1,
+				},
+				{ noshowLoading: first ? true : false }
+			).then((result) => {
 				this.fontColorList = JSON.parse(result.fontColor)
 				this.fontSizeList = JSON.parse(result.fontSize)
 			})
 		},
-		getSourceList() {
-			this.$get("/front/materialsSource/get", {
-				"materialsClass.id": this.selectClassId,
-				page: this.page,
-				isMine: "0",
-				audit: "1",
-				status: "1",
-				isOpen: "1",
-			}).then((result) => {
+		getEraserList(first) {
+			this.$get(
+				"/front/designTool/view",
+				{
+					id: 3,
+				},
+				{ noshowLoading: first ? true : false }
+			).then((result) => {
+				this.eraserSize = JSON.parse(result.eraserSize).map((item) =>
+					parseFloat(item)
+				)
+				this.rubberWidth = this.eraserSize[0]
+				this.rubberConfigWidth = this.eraserSize.length * 80 + 10 + "px"
+			})
+		},
+		getbrushList(first) {
+			this.$get(
+				"/front/designTool/view",
+				{
+					id: 2,
+				},
+				{ noshowLoading: first ? true : false }
+			).then((result) => {
+				let brushSize = JSON.parse(result.brushSize)
+				let brushColor = JSON.parse(result.brushColor)
+				brushSize.forEach((item, index) => {
+					this.brushs[index] = {
+						className: "fa fa-paint-brush",
+						lineWidth: parseFloat(item),
+						fontSize: 12 + index * 2,
+					}
+				})
+				this.config.lineWidth = this.brushs[0].lineWidth
+				this.config.lineColor = brushColor[0]
+				this.canvasConfigWidth = this.brushs.length * 70 + 10 + "px"
+			})
+		},
+		getSourceList(first) {
+			this.$get(
+				"/front/materialsSource/get",
+				{
+					"materialsClass.id": this.selectClassId,
+					page: this.page,
+					isMine: "0",
+					audit: "1",
+					status: "1",
+					isOpen: "1",
+				},
+				{ noshowLoading: first ? true : false }
+			).then((result) => {
 				this.page++
 				this.source = this.source.concat(result.source)
 				this.status =
@@ -1009,6 +1322,7 @@ export default {
 	background: #f5f5f5;
 }
 .designerBox {
+	background: #000;
 	position: relative;
 	height: 60vh;
 	width: 100%;
@@ -1069,6 +1383,9 @@ export default {
 	margin-left: 10px;
 	overflow: auto;
 }
+.fontFamily .active {
+	color: #f2849e;
+}
 .sourceBox {
 	width: 120px;
 	height: 120px;
@@ -1113,7 +1430,7 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 300px;
+	bottom: 350px;
 	z-index: 1005;
 	left: 0;
 }
@@ -1128,6 +1445,16 @@ export default {
 	z-index: 1005;
 }
 .showCanvasConfig {
+	width: 80px;
+	height: 30px;
+	border-top-right-radius: 15px;
+	border-bottom-right-radius: 15px;
+	position: fixed;
+	bottom: 300px;
+	left: 0;
+	z-index: 1005;
+}
+.showRubberConfig {
 	width: 80px;
 	height: 30px;
 	border-top-right-radius: 15px;

@@ -11,7 +11,13 @@ export default {
 </script>
 
 <style>
-@import url("//at.alicdn.com/t/font_2102205_nm5z1h9ast.css");
+@import url("//at.alicdn.com/t/font_2102205_tvata42dvzl.css");
 @import url("./common/common.css");
 @import url("./common/font.css");
+@import url("./fontFace/fontFace.css");
+#app {
+	position: relative;
+	width: 100%;
+	min-height: 100vh;
+}
 </style>

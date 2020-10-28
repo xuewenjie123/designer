@@ -1,0 +1,37 @@
+@font-face
+{
+	font-family: 新宋体;
+	src: url('https://custom.sw580.net/scripts/fonts/SIMSUN.TTC')
+}
+@font-face
+{
+	font-family: 楷体;
+	src: url('https://custom.sw580.net/scripts/fonts/SIMKAI.TTF')
+}
+
+@font-face
+{
+	font-family: 黑体;
+	src: url('https://custom.sw580.net/scripts/fonts/SIMHEI.TTF')
+}
+@font-face
+{
+	font-family: 仿宋;
+	src: url('https://custom.sw580.net/scripts/fonts/SIMFANG.TTF')
+}
+@font-face
+{
+	font-family: ANDLSO;
+	src: url('https://custom.sw580.net/scripts/fonts/ANDLSO.TTF')
+}
+@font-face
+{
+	font-family: BATANG;
+	src: url('https://custom.sw580.net/scripts/fonts/BATANG.TTC')
+}
+@font-face
+{
+	font-family: 繁体;
+	src: url('https://custom.sw580.net/scripts/fonts/MINGLIU.TTC')
+}
+

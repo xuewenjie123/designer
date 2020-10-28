@@ -7,11 +7,12 @@ import "./assets/css/reset.css"
 import "./assets/js/rem.js" //rem
 import HeaderCommon from "./components/HeaderCommon.vue"
 import "vant/lib/index.css"
-import { Swipe, SwipeItem, Lazyload, Slider } from "vant"
+import { Swipe, SwipeItem, Lazyload, Slider, Loading } from "vant"
 Vue.use(Lazyload)
 Vue.use(Swipe)
 Vue.use(Slider)
 Vue.use(SwipeItem)
+Vue.use(Loading)
 import { get, post, upFile } from "./utils/ajax.js"
 import VueDraggableResizable from "vue-draggable-resizable"
 import "vue-draggable-resizable/dist/VueDraggableResizable.css"

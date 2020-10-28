@@ -25,12 +25,15 @@ instance.interceptors.request.use(
 		if (config.method == "get") {
 			config.url += "?" + config.data
 		}
-		Toast.loading({
-			duration: 0,
-			message: "加载中...",
-			forbidClick: true,
-			loadingType: "spinner",
-		})
+		if (!config.noshowLoading) {
+			Toast.loading({
+				duration: 0,
+				message: "加载中...",
+				forbidClick: true,
+				loadingType: "spinner",
+			})
+		}
+
 		if (config.method == "post") {
 			config.params = {}
 		}
@@ -46,7 +49,6 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
 	(response) => {
 		console.log(response.config.url + "服务器返回数据", response.data)
-		Toast.clear()
 		if (response.data.status) {
 			//成功
 			return Promise.resolve(response.data.other)
@@ -82,9 +84,15 @@ const ajax = (methodType, url, params = {}, config) => {
 			...config,
 		})
 			.then((response) => {
+				if (!config.noshowLoading) {
+					Toast.clear()
+				}
 				resolve(response)
 			})
 			.catch((error) => {
+				if (!config.noshowLoading) {
+					Toast.clear()
+				}
 				reject(error)
 			})
 	})
