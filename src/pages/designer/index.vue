@@ -67,11 +67,17 @@
 								@activated="onImgActivated(item)"
 								:active="item.imgActive"
 								:preventDeactivation="true"
-								:w="40"
-								:h="20"
-                              
-								@dragging="onImgDrag"
-								@resizing="onResize"
+								@resizestop="resizestop"
+								@dragstop="dragstop"
+								:w="item.w"
+								:h="item.h"
+								:x="item.x"
+								:y="item.y"
+								@dragging="(x, y) => onImgDrag(x, y, item)"
+								@resizing="
+									(x, y, w, h) =>
+										onImgResize(x, y, w, h, item)
+								"
 								:parent="true"
 							>
 								<img
@@ -92,15 +98,17 @@
 									: '1px dashed #000',
 							}"
 							v-if="showDragText"
+							@resizestop="resizestop"
+							@dragstop="dragstop"
 							@activated="onTextActivated"
 							:active="textActive"
 							:preventDeactivation="true"
-							:w="90"
-							:h="20"
+							:w="textWidth"
+							:h="textHeight"
 							:x="textx"
 							:y="texty"
 							@dragging="onTextDrag"
-							@resizing="onResize"
+							@resizing="onTextResize"
 							:parent="true"
 						>
 							<p
@@ -461,7 +469,14 @@
 					>橡皮擦</span
 				>
 			</div>
-
+			<div
+				class="prevBox"
+				v-if="textContent || selectImgList.length || preDrawAry.length"
+			>
+				<div @click="prevDesigner" class="finshedbtn flex all-center">
+					<span class="font12 _33hei">上一步</span>
+				</div>
+			</div>
 			<div
 				class="finshedBox"
 				v-if="eidtFinshed && (textContent || selectImgList.length)"
@@ -524,16 +539,14 @@ export default {
 		})
 		let { designerInfo } = this.$route.query
 		let info = JSON.parse(designerInfo)
-		console.log("info", info)
 		return {
 			loading: true,
 			canvasZindex: 1,
 			designerInfo: info,
-			x: 0,
-			y: 0,
+			textWidth: 90,
+			textHeight: 20,
 			textActive: false,
 			textdeg: 0,
-			imgdeg: 0,
 			textfocus: false,
 			designerImg: "",
 			imgUrl: info.picUrl,
@@ -594,8 +607,6 @@ export default {
 			fontSize: "14px",
 			currentColor: "#000",
 			showDragText: false,
-			imgx: 10,
-			imgy: 50,
 			textx: 20,
 			texty: 20,
 			page: 1,
@@ -604,9 +615,6 @@ export default {
 			selectShowImg: {},
 			lastBackPressed: "",
 			status: "loading", //还有更多
-			fontJson: {
-				新宋体: "https://custom.sw580.net/scripts/fonts/SIMSUN.TTC",
-			},
 			selectzIndex: 1,
 			timer: null,
 			brushColor: [
@@ -652,12 +660,13 @@ export default {
 			canvasConfigList: [
 				{ name: "画笔大小", id: "tuyaSize" },
 				{ name: "画笔颜色", id: "tuyaColor" },
-				{ name: "操作", id: "tuyaControls" },
+				// { name: "操作", id: "tuyaControls" },
 			],
 			canvasConfigId: "tuyaSize",
 			canvasConfigWidth: "100%",
 			eraserSize: [5, 10, 20],
 			rubberWidth: 5,
+			preAllData: [],
 		}
 	},
 	mounted() {
@@ -734,7 +743,7 @@ export default {
 		},
 		// 操作
 		controlCanvas(action) {
-			console.log(action)
+			console.log(action, "================")
 			switch (action) {
 				case "prev":
 					if (this.preDrawAry.length) {
@@ -1127,32 +1136,76 @@ export default {
 			wrapperEl.scrollLeft = 0
 			this.getSourceList()
 		},
-		onResize: function(x, y, width, height) {
-			this.x = x
-			this.y = y
-			this.width = width
-			this.height = height
+		savePrevData() {
+			let obj = {
+				selectImgList: this.selectImgList,
+				textContent: this.textContent,
+				textdeg: this.textdeg,
+				textx: this.textx,
+				texty: this.texty,
+			}
+			this.preAllData.push(JSON.parse(JSON.stringify(obj)))
+			console.log("----------------------savePrevData")
+			console.log(this.preAllData)
+		},
+		onTextResize: function(x, y, width, height) {
+			console.log(width, height)
+			this.textX = x
+			this.textY = y
+			this.textWidth = width == 0 ? 1 : width
+			this.textHeight = height == 0 ? 1 : height
 		},
 		onTextDrag(x, y) {
 			this.textX = x
 			this.textY = y
 		},
-		onImgDrag(x, y) {
-			this.imgx = x
-			this.imgy = y
+
+		onImgResize(x, y, width, height, item) {
+			item.x = x
+			item.y = y
+			item.w = width == 0 ? 1 : width
+			item.h = height == 0 ? 1 : height
+		},
+		resizestop() {
+			this.savePrevData()
+		},
+		dragstop() {
+			this.savePrevData()
+		},
+		onImgDrag(x, y, item) {
+			item.x = x
+			item.y = y
 		},
 		selectImg(item) {
 			this.designerWhat = "img"
-			this.selectShowImg = { url: item.mainPic, imgdeg: 0, ...item }
+
 			let len = this.selectImgList.length
 			if (this.eidtFinshed || !this.selectImgList.length) {
+				this.selectShowImg = {
+					url: item.mainPic,
+					imgdeg: 0,
+					...item,
+					x: 20,
+					y: 20,
+					w: 50,
+					h: 50,
+				}
 				this.selectImgList.push(this.selectShowImg)
 				this.selectImgList[len].imgActive = true
 			} else {
+				this.selectShowImg = {
+					url: item.mainPic,
+					imgdeg: item.imgdeg,
+					...item,
+					x: this.selectShowImg.x,
+					y: this.selectShowImg.y,
+					w: this.selectShowImg.w,
+					h: this.selectShowImg.h,
+				}
 				this.selectImgList[len - 1] = this.selectShowImg
 				this.selectImgList[len - 1].imgActive = true
 			}
-
+			this.savePrevData()
 			this.eidtFinshed = false
 
 			this.textActive = false
@@ -1166,9 +1219,6 @@ export default {
 			this.eidtFinshed = false
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			item.imgActive = true
-			// this.select
-			this.imgdeg = item.imgdeg
-			console.log(this.selectImgList)
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
 			this.textActive = false
@@ -1243,6 +1293,13 @@ export default {
 			this.selectShowImg.imgdeg = value
 		},
 		yesDesigner() {
+			if (
+				this.preAllData.length &&
+				this.textContent !=
+					his.preAllData[this.preAllData.length - 1].textContent
+			) {
+				this.savePrevData()
+			}
 			if (!this.textContent) {
 				this.showDragText = false
 			}
@@ -1254,11 +1311,46 @@ export default {
 			this.imgActive = false
 			this.eidtFinshed = true
 		},
+		prevDesigner() {
+			this.controlCanvas("prev")
+			if (this.preAllData.length == 0) {
+				return false
+			}
+			console.log("prealldata", this.preAllData[0])
+			this.preAllData.pop()
+			if (this.preAllData.length == 1) {
+				this.selectImgList = []
+				this.textContent = ""
+				this.textdeg = 0
+				this.textx = 20
+				this.texty = 20
+			} else {
+				this.selectImgList = this.preAllData[
+					this.preAllData.length - 1
+				].selectImgList
+				this.textContent = this.preAllData[
+					this.preAllData.length - 1
+				].textContent
+				this.textdeg = this.preAllData[
+					this.preAllData.length - 1
+				].textdeg
+				this.textx = this.preAllData[this.preAllData.length - 2].textx
+				this.texty = this.preAllData[this.preAllData.length - 2].texty
+			}
+			this.eidtFinshed = true
+			if (!this.textContent) {
+				this.showDragText = false
+			}
+			this.$forceUpdate()
+			// && (textContent || selectImgList.length)
+			console.log(this.textContent || this.selectImgList.length)
+		},
 		resetDesigner() {
 			Dialog.confirm({
 				title: "您确定要重做吗",
 				message: "取消您当前的设计？",
 			}).then(() => {
+				this.preAllData = []
 				this.selectImgList = this.selectImgList.filter((item) => {
 					return item.id != this.selectShowImg.id
 				})
@@ -1268,6 +1360,7 @@ export default {
 			})
 		},
 		delDesigner() {
+			console.log("sellefjsdakljfkldskl", this.selectShowImg)
 			if (this.textActive) {
 				this.textContent = ""
 				this.showDragText = false
@@ -1276,6 +1369,7 @@ export default {
 					return item.id != this.selectShowImg.id
 				})
 			}
+			this.savePrevData()
 			this.selectzIndex = 1002
 			this.designerWhat = "img"
 		},
@@ -1322,7 +1416,7 @@ export default {
 	background: #f5f5f5;
 }
 .designerBox {
-	background: #000;
+	background: #fff;
 	position: relative;
 	height: 60vh;
 	width: 100%;
@@ -1408,6 +1502,15 @@ export default {
 	border-radius: 4px;
 	margin-top: 20px;
 }
+
+.prevBox {
+	position: absolute;
+	top: 60px;
+	left: 20px;
+	height: 80px;
+	width: 40px;
+	z-index: 1009;
+}
 .finshedBox {
 	position: absolute;
 	top: 60px;
@@ -1422,7 +1525,7 @@ export default {
 	right: 20px;
 	height: 60vh;
 	width: 30px;
-	z-index: 1005;
+	z-index: 1007;
 }
 .showImgConfig {
 	width: 80px;
@@ -1440,7 +1543,7 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 200px;
+	bottom: 300px;
 	left: 0;
 	z-index: 1005;
 }
@@ -1450,7 +1553,7 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 300px;
+	bottom: 250px;
 	left: 0;
 	z-index: 1005;
 }
@@ -1460,7 +1563,7 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 250px;
+	bottom: 200px;
 	left: 0;
 	z-index: 1005;
 }
