@@ -12,14 +12,6 @@ const router = new VueRouter({
 			redirect: "/startDesigner",
 		},
 		{
-			path: "/graffiti",
-			name: "graffiti",
-			component: () =>
-				import(
-					/* webpackChunkName: "graffiti" */ "@/pages/graffiti/index.vue"
-				),
-		},
-		{
 			path: "/startDesigner",
 			name: "startDesigner",
 			component: () =>

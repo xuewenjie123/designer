@@ -1,8 +1,13 @@
 <template>
 	<div class="designer ">
-		<header-common title="开始定制"></header-common>
 		<div
-			style="width:100;position:relative"
+			v-show="!eidtFinshed"
+			style="width:100%;height:100vh;position:absolute;background:#000;z-index:0;opacity:0.4"
+		></div>
+		<!-- <header-common title="开始定制"></header-common> -->
+		<div
+			class="flex all-center"
+			style="width:100;position:relative;"
 			:style="{ opacity: !loading ? 1 : 0 }"
 		>
 			<div class="designerBox flex-column flex align-center">
@@ -147,7 +152,7 @@
 								:style="{
 									color:
 										selectClassId == item.id
-											? '#c62336'
+											? '#fff'
 											: '#333',
 								}"
 								>{{ item.name }}</span
@@ -196,6 +201,17 @@
 								}"
 								>{{ item.name }}</span
 							>
+						</div>
+					</div>
+					<div
+						v-if="designerWhat == 'rubber'"
+						class="flex align-center"
+						style="width:100%;height:40px"
+					>
+						<div
+							class="flex all-center flex-item fontConfigBox border-box"
+						>
+							<span style="color: #c62336">橡皮擦大小</span>
 						</div>
 					</div>
 				</div>
@@ -556,7 +572,7 @@ export default {
 			source: [], //素材列表
 			textContent: "", //当前正在编辑的文字
 			selectImgList: [], //选择图片列表
-			eidtFinshed: false,
+			eidtFinshed: true,
 			bgzIndex: 1000,
 			fontConfigList: [
 				{
@@ -826,8 +842,8 @@ export default {
 					this.context.clearRect(
 						canvasX,
 						canvasY - 20,
-						this.rubberWidth,
-						this.rubberWidth
+						this.rubberWidth * 2,
+						this.rubberWidth * 2
 					)
 					this.context.restore()
 				} else {
@@ -1272,7 +1288,7 @@ export default {
 					sources = sources.join(",")
 					this.$upFile("/front/userDesignItem/save", {
 						"userDesign.id": "1",
-						designItemId: this.designerInfo.designItemId,
+						id: this.designerInfo.designItemId,
 						"typeItem.id": this.designerInfo.id,
 						picFile: uploadFile,
 						sources,
@@ -1296,7 +1312,7 @@ export default {
 			if (
 				this.preAllData.length &&
 				this.textContent !=
-					his.preAllData[this.preAllData.length - 1].textContent
+					this.preAllData[this.preAllData.length - 1].textContent
 			) {
 				this.savePrevData()
 			}
@@ -1325,25 +1341,29 @@ export default {
 				this.textx = 20
 				this.texty = 20
 			} else {
-				this.selectImgList = this.preAllData[
-					this.preAllData.length - 1
-				].selectImgList
-				this.textContent = this.preAllData[
-					this.preAllData.length - 1
-				].textContent
-				this.textdeg = this.preAllData[
-					this.preAllData.length - 1
-				].textdeg
-				this.textx = this.preAllData[this.preAllData.length - 2].textx
-				this.texty = this.preAllData[this.preAllData.length - 2].texty
+				if (this.preAllData[this.preAllData.length - 1]) {
+					this.selectImgList = this.preAllData[
+						this.preAllData.length - 1
+					].selectImgList
+					this.textContent = this.preAllData[
+						this.preAllData.length - 1
+					].textContent
+					this.textdeg = this.preAllData[
+						this.preAllData.length - 1
+					].textdeg
+					this.textx = this.preAllData[
+						this.preAllData.length - 2
+					].textx
+					this.texty = this.preAllData[
+						this.preAllData.length - 2
+					].texty
+				}
 			}
 			this.eidtFinshed = true
 			if (!this.textContent) {
 				this.showDragText = false
 			}
 			this.$forceUpdate()
-			// && (textContent || selectImgList.length)
-			console.log(this.textContent || this.selectImgList.length)
 		},
 		resetDesigner() {
 			Dialog.confirm({
@@ -1418,9 +1438,7 @@ export default {
 .designerBox {
 	background: #fff;
 	position: relative;
-	height: 60vh;
-	width: 100%;
-	padding-top: 20px;
+	margin-top: 20px;
 }
 .designerBottom {
 	position: fixed;
@@ -1448,6 +1466,7 @@ export default {
 	height: 40px;
 	width: 80px;
 	border: 1px solid #1f1f1f;
+	background: #9c9c9c;
 }
 .fontConfigBox {
 	border: 1px solid #1f1f1f;

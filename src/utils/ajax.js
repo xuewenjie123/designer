@@ -1,7 +1,13 @@
 import axios from "axios"
 import { Toast } from "vant"
 import qs from "qs"
-let bulicurl = "/api"
+let bulicurl = ""
+
+if (process.env.NODE_ENV == "development") {
+	bulicurl = "/api"
+} else {
+	bulicurl = "https://custom.sw580.net"
+}
 const instance = axios.create({
 	//创建axios实例，在这里可以设置请求的默认配置
 	timeout: 10000, // 设置超时时间10s

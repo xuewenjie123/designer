@@ -1,22 +1,17 @@
 <template>
 	<div class="homeBox border-box flex flex-column">
-		<header-common leftNoShow title="开始定制"> </header-common>
 		<div
 			class="flex-item flex flex-column all-center"
 			style="background:#f5f5f5"
 		>
-			<h3
-				class="font18 bold"
-				style="margin-bottom:20px;"
-				@click="testDesigner"
-			>
-				左右滑动查看正/背面
+			<h3 class="font18 bold" style="margin-bottom:20px;">
+				{{ images.length ? images[curIndex].name : "" }}
 			</h3>
-			<van-swipe indicator-color="#ccc">
+			<van-swipe indicator-color="#ccc" @change="changeImg">
 				<van-swipe-item v-for="(item, index) in images" :key="index">
 					<div class="showImgBox" @click="goDesiner(item)">
-						<img width="100%" v-lazy="item.goodsImg" />
-						<img
+						<img width="100%" v-lazy="item.designPic" />
+						<!-- <img
 							class="addDesigner"
 							:style="{
 								top: item.y * scale + 'px',
@@ -25,7 +20,7 @@
 							}"
 							:src="item.picUrl"
 							alt=""
-						/>
+						/> -->
 					</div>
 				</van-swipe-item>
 			</van-swipe>
@@ -41,6 +36,7 @@ export default {
 			clientWidth: 0,
 			scaleZ: 1,
 			scaleB: 1,
+			curIndex: 0,
 		}
 	},
 	mounted() {
@@ -51,32 +47,36 @@ export default {
 		getImgList() {
 			this.$get("/front/type/getItems", { designId: 1 }).then(
 				(result) => {
+					this.images = result
 					// 图片地址
 					// 创建对象
-					let img = new Image()
-					// 改变图片的src
+					// let img = new Image()
+					// // 改变图片的src
 
-					img.src = result[0].goodsImg
-					this.scale = this.clientWidth / img.width
-					console.log("scale", this.scale)
-					img.src = result[0].picUrl
-					result[0].width = img.width * this.scale
+					// img.src = result[0].goodsImg
+					// this.scale = this.clientWidth / img.width
+					// console.log("scale", this.scale)
+					// img.src = result[0].picUrl
+					// result[0].width = img.width * this.scale
 
-					img.src = result[1].goodsImg
-					this.scale = this.clientWidth / img.width
-					console.log("scale", this.scale)
-					img.src = result[1].picUrl
-					result[1].width = img.width * this.scale
-					setTimeout(() => {
-						this.images = result
-						this.$forceUpdate()
-					}, 1000)
+					// img.src = result[1].goodsImg
+					// this.scale = this.clientWidth / img.width
+					// console.log("scale", this.scale)
+					// img.src = result[1].picUrl
+					// result[1].width = img.width * this.scale
+					// setTimeout(() => {
+					// 	this.images = result
+					// 	this.$forceUpdate()
+					// }, 1000)
 				}
 			)
 		},
 		goDesiner(designerInfo) {
 			let info = JSON.stringify(designerInfo)
 			this.$router.push("/designer?designerInfo=" + info)
+		},
+		changeImg(index) {
+			this.curIndex = index
 		},
 		testDesigner() {
 			let designerInfo = {
@@ -91,8 +91,7 @@ export default {
 </script>
 <style>
 .homeBox .van-swipe {
-	width: 100%;
-	height: 6rem;
+	width: 80%;
 }
 </style>
 
@@ -100,6 +99,7 @@ export default {
 .homeBox {
 	width: 100%;
 	min-height: 100vh;
+	background: #f1f1ef;
 }
 .addDesigner {
 	position: absolute;

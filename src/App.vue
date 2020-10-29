@@ -14,7 +14,7 @@ export default {
 @import url("//at.alicdn.com/t/font_2102205_tvata42dvzl.css");
 @import url("./common/common.css");
 @import url("./common/font.css");
-@import url("./fontFace/fontFace.css");
+/* @import url("./fontFace/fontFace.css"); */
 #app {
 	position: relative;
 	width: 100%;

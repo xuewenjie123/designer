@@ -1,6 +1,6 @@
 <template>
 	<div class="homeBox border-box flex flex-column">
-		<header-common title="开始定制"> </header-common>
+		<!-- <header-common title="开始定制"> </header-common> -->
 		<div
 			class="flex-item flex flex-column all-center"
 			style="background:#f5f5f5"
