@@ -21,7 +21,7 @@ const router = new VueRouter({
 		},
 		{
 			path: "/designer",
-			name: "designer",
+			name: "designer",   
 			component: () =>
 				import(
 					/* webpackChunkName: "designer" */ "@/pages/designer/index.vue"

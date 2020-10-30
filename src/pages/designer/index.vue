@@ -6,12 +6,15 @@
 		></div>
 		<!-- <header-common title="开始定制"></header-common> -->
 		<div
-			class="flex all-center"
+			class="flex"
 			style="width:100;position:relative;"
 			:style="{ opacity: !loading ? 1 : 0 }"
 		>
-			<div class="designerBox flex-column flex align-center">
+			<div ref="leftBox" class="flex flex-item"></div>
+
+			<div class="designerBox flex-column flex">
 				<div
+					ref="designerBox"
 					id="designerBox"
 					style="position:relative;left:0"
 					:style="{
@@ -64,6 +67,7 @@
 							<vue-draggable-resizable
 								v-for="(item, index) in selectImgList"
 								:key="index"
+								classNameResizable="myclassNameResizable"
 								:style="{
 									border: eidtFinshed
 										? 'none'
@@ -78,6 +82,7 @@
 								:h="item.h"
 								:x="item.x"
 								:y="item.y"
+								:z="item.z"
 								@dragging="(x, y) => onImgDrag(x, y, item)"
 								@resizing="
 									(x, y, w, h) =>
@@ -112,18 +117,19 @@
 							:h="textHeight"
 							:x="textx"
 							:y="texty"
+							:z="textZ"
 							@dragging="onTextDrag"
 							@resizing="onTextResize"
 							:parent="true"
 						>
 							<p
+								ref="inputContent"
 								:style="{
 									fontSize: fontSize + 'px',
 									color: currentColor,
 									fontFamily: fontFamily,
 									fontWeight: 'bold',
 									width: '100%',
-									height: '100%',
 									transform: 'rotate(' + textdeg + 'deg)',
 								}"
 							>
@@ -133,6 +139,7 @@
 					</div>
 				</div>
 			</div>
+			<div ref="rightBox" class="flex flex-item"></div>
 
 			<div class="designerBottom">
 				<!-- <div class="classifyWrapperOpa"></div> -->
@@ -307,6 +314,7 @@
 								@focus="textfocus = true"
 								@blur="textfocus = false"
 								class="content"
+								@input="changeTextContent"
 								v-model="textContent"
 								maxlength="40"
 								placeholder="点这里可以输入文字内容哦"
@@ -360,39 +368,26 @@
 							</div>
 						</template>
 
-						<template v-if="canvasConfigId == 'tuyaControls'">
+						<template v-if="canvasConfigId == 'tuyaRubber'">
 							<div
 								class="flex align-end justify-center fontFamily"
-								v-for="item in controls"
-								:key="item.action"
-								@click="controlCanvas(item.action)"
+								v-for="item in eraserSize"
+								:key="item + 'rubber'"
+								@click="setRubberWidth(item)"
+								:style="{
+									color:
+										rubberWidth === item
+											? '#c62336'
+											: '#333',
+								}"
 							>
-								<span :class="item.className"></span>
+								<span
+									class="iconfont iconxiangpica"
+									:style="{ fontSize: item * 2.8 + 'px' }"
+								></span>
+								{{ item }}
 							</div>
 						</template>
-					</div>
-					<div
-						v-if="designerWhat == 'rubber'"
-						style="height:120px"
-						class="flex align-center"
-						:style="{ width: rubberConfigWidth }"
-					>
-						<div
-							class="flex align-end justify-center fontFamily"
-							v-for="item in eraserSize"
-							:key="item + 'rubber'"
-							@click="setRubberWidth(item)"
-							:style="{
-								color:
-									rubberWidth === item ? '#c62336' : '#333',
-							}"
-						>
-							<span
-								class="iconfont iconxiangpica"
-								:style="{ fontSize: item * 2.8 + 'px' }"
-							></span>
-							{{ item }}
-						</div>
 					</div>
 				</div>
 			</div>
@@ -464,28 +459,6 @@
 			</div>
 
 			<div
-				@click="setdesignerWhatRubber"
-				:style="{
-					background:
-						designerWhat == 'rubber' ? '#c62336' : '#e8eceb',
-				}"
-				class="showRubberConfig flex flex-row align-center justify-around"
-			>
-				<span
-					class="iconfont iconxiangpica"
-					:style="{
-						color: designerWhat == 'rubber' ? '#fff' : '#a2a6a5',
-					}"
-				></span>
-				<span
-					class="font14 "
-					:style="{
-						color: designerWhat == 'rubber' ? '#fff' : '#a2a6a5',
-					}"
-					>橡皮擦</span
-				>
-			</div>
-			<div
 				class="prevBox"
 				v-if="textContent || selectImgList.length || preDrawAry.length"
 			>
@@ -514,6 +487,8 @@
 				class="sliderBox flex align-center flex-column"
 			>
 				<van-slider
+					min="-180"
+					max="180"
 					v-if="textActive"
 					vertical
 					v-model="textdeg"
@@ -522,6 +497,8 @@
 				/>
 
 				<van-slider
+					min="-180"
+					max="180"
 					active-color="#c52436"
 					v-else
 					vertical
@@ -628,7 +605,7 @@ export default {
 			page: 1,
 			designAreaWidth: 338,
 			designAreaHeight: 338,
-			selectShowImg: {},
+			selectShowImg: { imgdeg: 0 },
 			lastBackPressed: "",
 			status: "loading", //还有更多
 			selectzIndex: 1,
@@ -676,13 +653,15 @@ export default {
 			canvasConfigList: [
 				{ name: "画笔大小", id: "tuyaSize" },
 				{ name: "画笔颜色", id: "tuyaColor" },
-				// { name: "操作", id: "tuyaControls" },
+				{ name: "橡皮擦", id: "tuyaRubber" },
 			],
 			canvasConfigId: "tuyaSize",
 			canvasConfigWidth: "100%",
 			eraserSize: [5, 10, 20],
 			rubberWidth: 5,
 			preAllData: [],
+			isRubber: false,
+			textZ: "auto",
 		}
 	},
 	mounted() {
@@ -738,6 +717,11 @@ export default {
 		},
 	},
 	methods: {
+		changeTextContent(e) {
+			if (this.$refs.inputContent) {
+				this.textHeight = this.$refs.inputContent.offsetHeight
+			}
+		},
 		isPc() {
 			const userAgentInfo = navigator.userAgent
 			const Agents = [
@@ -822,26 +806,25 @@ export default {
 		},
 		canvasMove(e) {
 			if (this.canvasMoveUse) {
-				console.log("canvasMove")
 				const t = e.target
 				console.log(e.target)
 				let canvasX
 				let canvasY
 				console.log(this.isPc())
 				if (this.isPc()) {
-					canvasX = e.clientX - 20
-					canvasY = e.clientY - 40
+					canvasX = e.clientX - this.$refs.leftBox.offsetWidth
+					canvasY = e.clientY - 20
 				} else {
-					console.log(e.changedTouches[0].clientX)
-					console.log(t.parentNode.offsetLeft)
-					canvasX = e.changedTouches[0].clientX - 20
-					canvasY = e.changedTouches[0].clientY - 40
+					canvasX =
+						e.changedTouches[0].clientX -
+						this.$refs.leftBox.offsetWidth
+					canvasY = e.changedTouches[0].clientY - 20
 				}
-				if (this.designerWhat == "rubber") {
+				if (this.isRubber) {
 					this.context.save()
 					this.context.clearRect(
 						canvasX,
-						canvasY - 20,
+						canvasY,
 						this.rubberWidth * 2,
 						this.rubberWidth * 2
 					)
@@ -948,6 +931,7 @@ export default {
 			this.eidtFinshed = false
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
+			this.textZ = 1
 			this.$forceUpdate()
 		},
 		setdesignerWhatImg() {
@@ -1034,12 +1018,19 @@ export default {
 			this.canvasConfigId = id
 			switch (id) {
 				case "tuyaSize":
+					this.isRubber = false
 					this.canvasConfigWidth = this.brushs.length * 70 + 10 + "px"
 					break
 				case "tuyaColor":
-					console.log(this.brushColor)
+					this.isRubber = false
 					this.canvasConfigWidth =
 						this.brushColor.length * 70 + 10 + "px"
+					break
+				case "tuyaRubber":
+					console.log(this.brushColor)
+					this.isRubber = true
+					this.canvasConfigWidth =
+						this.eraserSize.length * 80 + 10 + "px"
 					break
 			}
 		},
@@ -1098,7 +1089,6 @@ export default {
 					parseFloat(item)
 				)
 				this.rubberWidth = this.eraserSize[0]
-				this.rubberConfigWidth = this.eraserSize.length * 80 + 10 + "px"
 			})
 		},
 		getbrushList(first) {
@@ -1194,17 +1184,18 @@ export default {
 		},
 		selectImg(item) {
 			this.designerWhat = "img"
-
+			this.textZ = "auto"
 			let len = this.selectImgList.length
 			if (this.eidtFinshed || !this.selectImgList.length) {
 				this.selectShowImg = {
 					url: item.mainPic,
 					imgdeg: 0,
 					...item,
-					x: 20,
-					y: 20,
+					x: 40,
+					y: 40,
 					w: 50,
 					h: 50,
+					z: 1,
 				}
 				this.selectImgList.push(this.selectShowImg)
 				this.selectImgList[len].imgActive = true
@@ -1217,6 +1208,7 @@ export default {
 					y: this.selectShowImg.y,
 					w: this.selectShowImg.w,
 					h: this.selectShowImg.h,
+					z: 1,
 				}
 				this.selectImgList[len - 1] = this.selectShowImg
 				this.selectImgList[len - 1].imgActive = true
@@ -1230,11 +1222,15 @@ export default {
 			this.$forceUpdate()
 		},
 		onImgActivated(item) {
+			this.textZ = "auto"
 			this.designerWhat = "img"
-			this.selectShowImg = item
 			this.eidtFinshed = false
-			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.selectImgList.forEach((item) => {
+				item.imgActive = false
+				item.z = "auto"
+			})
 			item.imgActive = true
+			item.z = 1
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
 			this.textActive = false
@@ -1247,7 +1243,11 @@ export default {
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
 			this.textActive = true
-			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.textZ = 1
+			this.selectImgList.forEach((item) => {
+				item.imgActive = false
+				item.z = "auto"
+			})
 			this.$forceUpdate()
 		},
 		fineshDesigner() {
@@ -1297,7 +1297,7 @@ export default {
 						canvas.style.width = width + "px"
 						canvas.style.height = height + "px"
 						this.setDesignerImg(canvas.toDataURL())
-						this.$router.push("/previewDesigner")
+						this.$router.replace("/previewDesigner")
 					})
 				})
 				// console.log(canvas)
@@ -1458,6 +1458,7 @@ export default {
 .classifyWrapper {
 	width: 100%;
 	overflow-x: scroll;
+	overflow-y: hidden;
 	height: 40px;
 	scrollbar-width: none;
 	-ms-overflow-style: none; /* IE 10+ */
@@ -1524,16 +1525,16 @@ export default {
 
 .prevBox {
 	position: absolute;
-	top: 60px;
-	left: 20px;
+	top: 20px;
+	left: 30px;
 	height: 80px;
 	width: 40px;
 	z-index: 1009;
 }
 .finshedBox {
 	position: absolute;
-	top: 60px;
-	right: 20px;
+	top: 20px;
+	right: 30px;
 	height: 100px;
 	width: 40px;
 	z-index: 1005;
@@ -1541,7 +1542,7 @@ export default {
 .sliderBox {
 	position: absolute;
 	top: 80px;
-	right: 20px;
+	right: 30px;
 	height: 60vh;
 	width: 30px;
 	z-index: 1007;
@@ -1552,7 +1553,7 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 350px;
+	bottom: 260px;
 	z-index: 1005;
 	left: 0;
 }
@@ -1562,7 +1563,7 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 300px;
+	bottom: 220px;
 	left: 0;
 	z-index: 1005;
 }
@@ -1572,17 +1573,7 @@ export default {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
 	position: fixed;
-	bottom: 250px;
-	left: 0;
-	z-index: 1005;
-}
-.showRubberConfig {
-	width: 80px;
-	height: 30px;
-	border-top-right-radius: 15px;
-	border-bottom-right-radius: 15px;
-	position: fixed;
-	bottom: 200px;
+	bottom: 180px;
 	left: 0;
 	z-index: 1005;
 }

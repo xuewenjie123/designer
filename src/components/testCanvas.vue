@@ -220,6 +220,7 @@ export default {
 		},
 		// 鼠标移动时绘制
 		canvasMove(e) {
+            
 			if (this.canvasMoveUse && this.canDraw) {
 				// client是基于整个页面的坐标，offset是cavas距离pictureDetail顶部以及左边的距离
 				let canvasX = e.clientX - e.target.parentNode.offsetLeft

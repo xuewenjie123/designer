@@ -7,10 +7,27 @@
 			<h3 class="font18 bold" style="margin-bottom:20px;">
 				{{ images.length ? images[curIndex].name : "" }}
 			</h3>
+			<!-- <img
+							class="addDesigner"
+							:style="{
+								top: item.y * scale + 'px',
+								left: item.x * scale + 'px',
+								width: item.width + 'px',
+							}"
+							:src="item.picUrl"
+							alt=""
+						/> -->
 			<van-swipe indicator-color="#ccc" @change="changeImg">
 				<van-swipe-item v-for="(item, index) in images" :key="index">
 					<div class="showImgBox" @click="goDesiner(item)">
-						<img width="100%" v-lazy="item.designPic" />
+						<img
+							width="100%"
+							v-lazy="item.designPic || item.goodsImg"
+						/>
+						<span
+							class="iconfont iconshouzhi"
+							style="position:absolute;font-size:30px;color:#bf0d2a"
+						></span>
 						<!-- <img
 							class="addDesigner"
 							:style="{
@@ -107,5 +124,8 @@ export default {
 .showImgBox {
 	position: relative;
 	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 </style>
