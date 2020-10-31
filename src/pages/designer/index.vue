@@ -1,5 +1,5 @@
 <template>
-	<div class="designer ">
+	<div class="designer" id="designerAction">
 		<div
 			v-show="!eidtFinshed"
 			style="width:100%;height:100vh;position:absolute;background:#000;z-index:0;opacity:0.4"
@@ -142,7 +142,6 @@
 			<div ref="rightBox" class="flex flex-item"></div>
 
 			<div class="designerBottom">
-				<!-- <div class="classifyWrapperOpa"></div> -->
 				<div class="classifyWrapper">
 					<div
 						class="flex align-center"
@@ -167,7 +166,7 @@
 						</div>
 					</div>
 					<div
-						v-if="designerWhat == 'text' && !textfocus"
+						v-if="designerWhat == 'text'"
 						class="flex align-center"
 						style="width:100%;height:40px"
 					>
@@ -468,7 +467,12 @@
 			</div>
 			<div
 				class="finshedBox"
-				v-if="eidtFinshed && (textContent || selectImgList.length)"
+				v-if="
+					eidtFinshed &&
+						(textContent ||
+							selectImgList.length ||
+							preDrawAry.length)
+				"
 			>
 				<div @click="resetDesigner" class="finshedbtn flex all-center">
 					<span class="font12 _33hei">重做</span>
@@ -665,6 +669,42 @@ export default {
 		}
 	},
 	mounted() {
+		var overscroll = function(el) {
+			el.addEventListener(
+				"touchstart",
+				function() {
+					console.log("===============")
+					var top = el.scrollTop,
+						totalScroll = el.scrollHeight,
+						currentScroll = top + el.offsetHeight
+					//If we're at the top or the bottom of the containers
+					//scroll, push up or down one pixel.
+					//
+					//this prevents the scroll from "passing through" to
+					//the body.
+					if (top === 0) {
+						el.scrollTop = 1
+					} else if (currentScroll === totalScroll) {
+						el.scrollTop = top - 1
+					}
+				},
+				{ passive: false }
+			)
+			el.addEventListener(
+				"touchmove",
+				function(evt) {
+					//if the content is actually scrollable, i.e. the content is long enough
+					//that scrolling can occur
+					if (el.offsetHeight < el.scrollHeight)
+						evt._isScroller = true
+				},
+				{ passive: false }
+			)
+		}
+		overscroll(document.getElementById("designerAction"))
+		document
+			.querySelector("body")
+			.addEventListener("touchmove", this.canscroll, { passive: false })
 		const canvas = document.querySelector("#canvas")
 		this.context = canvas.getContext("2d")
 		this.getClassifyList("first")
@@ -687,6 +727,11 @@ export default {
 	},
 	beforeDestroy() {
 		this.timer && clearTimeout(this.timer)
+		document
+			.querySelector("body")
+			.removeEventListener("touchmove", this.canscroll, {
+				passive: false,
+			})
 	},
 	computed: {
 		controls() {
@@ -717,6 +762,19 @@ export default {
 		},
 	},
 	methods: {
+		canscroll(evt) {
+			//In this case, the default behavior is scrolling the body, which
+			//would result in an overflow.  Since we don't want that, we preventDefault.
+			if (
+				!evt._isScroller &&
+				!document
+					.querySelector(".classifyWrapper")
+					.contains(evt.target) &&
+				!document.querySelector(".innerContent").contains(evt.target)
+			) {
+				evt.preventDefault()
+			}
+		},
 		changeTextContent(e) {
 			if (this.$refs.inputContent) {
 				this.textHeight = this.$refs.inputContent.offsetHeight
@@ -799,13 +857,13 @@ export default {
 		},
 		beginPath(e) {
 			const canvas = document.querySelector("#canvas")
-			if (e.target !== canvas) {
+			if (e.target !== canvas && this.designerWhat == "tuya") {
 				console.log("beginPath")
 				this.context.beginPath()
 			}
 		},
 		canvasMove(e) {
-			if (this.canvasMoveUse) {
+			if (this.canvasMoveUse && this.designerWhat == "tuya") {
 				const t = e.target
 				console.log(e.target)
 				let canvasX
@@ -815,6 +873,11 @@ export default {
 					canvasX = e.clientX - this.$refs.leftBox.offsetWidth
 					canvasY = e.clientY - 20
 				} else {
+					console.log(
+						e.changedTouches[0].clientX,
+						e.changedTouches[0].clientY
+					)
+
 					canvasX =
 						e.changedTouches[0].clientX -
 						this.$refs.leftBox.offsetWidth
@@ -905,15 +968,6 @@ export default {
 			}
 		},
 		...mapMutations(["setDesignerImg"]),
-		setdesignerWhatRubber() {
-			this.designerWhat = "rubber"
-			this.textActive = false
-			this.eidtFinshed = false
-			this.canvasZindex = 1002
-			this.selectzIndex = 1
-			this.selectImgList.forEach((item) => (item.imgActive = false))
-			this.$forceUpdate()
-		},
 		setdesignerWhatTuYa() {
 			this.designerWhat = "tuya"
 			this.textActive = false
@@ -1193,8 +1247,8 @@ export default {
 					...item,
 					x: 40,
 					y: 40,
-					w: 50,
-					h: 50,
+					w: 100,
+					h: 100,
 					z: 1,
 				}
 				this.selectImgList.push(this.selectShowImg)
@@ -1320,7 +1374,7 @@ export default {
 				this.showDragText = false
 			}
 			this.selectImgList.forEach((item) => (item.imgActive = false))
-			this.selectzIndex = 1
+			this.selectzIndex = 1002
 			this.canvasZindex = 2
 			this.designerWhat = "img"
 			this.textActive = false
@@ -1377,10 +1431,10 @@ export default {
 				this.textContent = ""
 				this.showDragText = false
 				this.selectzIndex = 1
+				this.controlCanvas("clear")
 			})
 		},
 		delDesigner() {
-			console.log("sellefjsdakljfkldskl", this.selectShowImg)
 			if (this.textActive) {
 				this.textContent = ""
 				this.showDragText = false
@@ -1446,12 +1500,7 @@ export default {
 	width: 100%;
 	z-index: 1006;
 }
-.classifyWrapperOpa {
-	width: 100%;
-	height: 40px;
-	background: #000;
-	opacity: 0.4;
-}
+
 .classifyWrapper::-webkit-scrollbar {
 	display: none;
 }
@@ -1482,6 +1531,7 @@ export default {
 	height: 120px;
 	width: 100%;
 	overflow-x: scroll;
+	overflow-y: hidden;
 	scrollbar-width: none;
 	-ms-overflow-style: none; /* IE 10+ */
 }
@@ -1516,8 +1566,8 @@ export default {
 	left: 0;
 }
 .finshedbtn {
-	width: 40px;
-	height: 20px;
+	width: 60px;
+	height: 30px;
 	border: 1px solid #000;
 	border-radius: 4px;
 	margin-top: 20px;
@@ -1534,7 +1584,7 @@ export default {
 .finshedBox {
 	position: absolute;
 	top: 20px;
-	right: 30px;
+	right: 40px;
 	height: 100px;
 	width: 40px;
 	z-index: 1005;
