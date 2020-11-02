@@ -14,8 +14,7 @@ Vue.use(Slider)
 Vue.use(SwipeItem)
 Vue.use(Loading)
 import { get, post, upFile } from "./utils/ajax.js"
-import VueDraggableResizable from "vue-draggable-resizable"
-import "vue-draggable-resizable/dist/VueDraggableResizable.css"
+import VueDraggableResizable from "./components/vue-draggable-resizable.vue"
 Vue.component("vue-draggable-resizable", VueDraggableResizable)
 Vue.component("header-common", HeaderCommon)
 Vue.prototype.$get = get
@@ -23,6 +22,14 @@ Vue.prototype.$post = post
 Vue.prototype.$upFile = upFile
 Vue.use(validateForm)
 Vue.config.productionTip = false
+if (process.env.NODE_ENV == "production") {
+	global.console = {
+		info: () => {},
+		log: () => {},
+		warn: () => {},
+		error: () => {},
+	}
+}
 new Vue({
 	router,
 	store,

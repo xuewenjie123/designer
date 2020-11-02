@@ -14,7 +14,7 @@ export default {
 </script>
 
 <style>
-@import url("//at.alicdn.com/t/font_2102205_h9h3644chta.css");
+@import url("//at.alicdn.com/t/font_2102205_orbmx3x5drj.css");
 @import url("./common/common.css");
 @import url("./common/font.css");
 

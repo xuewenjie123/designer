@@ -5,21 +5,11 @@
 			style="background:#f5f5f5"
 		>
 			<h3 class="font18 bold" style="margin-bottom:20px;">
-				{{ images.length ? images[curIndex].name : "" }}
+				开始设计
 			</h3>
-			<!-- <img
-							class="addDesigner"
-							:style="{
-								top: item.y * scale + 'px',
-								left: item.x * scale + 'px',
-								width: item.width + 'px',
-							}"
-							:src="item.picUrl"
-							alt=""
-						/> -->
-			<van-swipe indicator-color="#ccc" @change="changeImg">
+			<van-swipe ref="swiper" indicator-color="#ccc" @change="changeImg">
 				<van-swipe-item v-for="(item, index) in images" :key="index">
-					<div class="showImgBox" @click="goDesiner(item)">
+					<div class="showImgBox" @click="goDesigner(item)">
 						<img
 							width="100%"
 							v-lazy="item.designPic || item.goodsImg"
@@ -28,25 +18,36 @@
 							class="iconfont iconshouzhi"
 							style="position:absolute;font-size:30px;color:#bf0d2a"
 						></span>
-						<!-- <img
-							class="addDesigner"
-							:style="{
-								top: item.y * scale + 'px',
-								left: item.x * scale + 'px',
-								width: item.width + 'px',
-							}"
-							:src="item.picUrl"
-							alt=""
-						/> -->
 					</div>
 				</van-swipe-item>
 			</van-swipe>
+			<h3
+				class="font16  flex all-center"
+				style="margin-top:20px;height:40px;"
+			>
+				<span
+					@click="swipeTo(0)"
+					:style="{ color: curIndex == 0 ? '#c62336' : '#000' }"
+					>{{ showNames[0] }}</span
+				>
+				<span style="margin:0 20px">|</span>
+				<span
+					@click="swipeTo(1)"
+					:style="{ color: curIndex == 1 ? '#c62336' : '#000' }"
+					>{{ showNames[1] }}</span
+				>
+			</h3>
 		</div>
 	</div>
 </template>
 
 <script>
 export default {
+	filters: {
+		filterName(images) {
+			let arr = images.map((item) => item.name)
+		},
+	},
 	data() {
 		return {
 			images: [],
@@ -54,6 +55,7 @@ export default {
 			scaleZ: 1,
 			scaleB: 1,
 			curIndex: 0,
+			showNames: [],
 		}
 	},
 	mounted() {
@@ -61,10 +63,14 @@ export default {
 		this.clientWidth = document.body.clientWidth
 	},
 	methods: {
+		swipeTo(index) {
+			this.$refs.swiper.swipeTo(index)
+		},
 		getImgList() {
 			this.$get("/front/type/getItems", { designId: 1 }).then(
 				(result) => {
 					this.images = result
+					this.showNames = result.map((item) => item.name)
 					// 图片地址
 					// 创建对象
 					// let img = new Image()
@@ -88,20 +94,12 @@ export default {
 				}
 			)
 		},
-		goDesiner(designerInfo) {
+		goDesigner(designerInfo) {
 			let info = JSON.stringify(designerInfo)
 			this.$router.push("/designer?designerInfo=" + info)
 		},
 		changeImg(index) {
 			this.curIndex = index
-		},
-		testDesigner() {
-			let designerInfo = {
-				picUrl:
-					"https://custom.sw580.net/upload/images/materialsSource/2.png",
-			}
-			let info = JSON.stringify(designerInfo)
-			this.$router.push("/designer?designerInfo=" + info)
 		},
 	},
 }
@@ -127,5 +125,11 @@ export default {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+}
+.finishBtn {
+	width: 80px;
+	height: 30px;
+	background: #731402;
+	margin-top: 20px;
 }
 </style>

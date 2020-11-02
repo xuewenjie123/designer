@@ -46,10 +46,7 @@
 					</div>
 					<img id="designImg" :src="imgUrl" alt="" />
 					<img
-						@click="
-							selectzIndex = 1002
-							eidtFinshed = false
-						"
+						@click="clickImg"
 						:src="designArea"
 						:style="{ zIndex: bgzIndex }"
 						style="position:absolute;left:0;top:0"
@@ -66,13 +63,12 @@
 						<template v-if="selectImgList.length">
 							<vue-draggable-resizable
 								v-for="(item, index) in selectImgList"
-								:key="index"
-								classNameResizable="myclassNameResizable"
 								:style="{
 									border: eidtFinshed
 										? 'none'
 										: '1px dashed #000',
 								}"
+								:key="item.id + '' + index"
 								@activated="onImgActivated(item)"
 								:active="item.imgActive"
 								:preventDeactivation="true"
@@ -100,42 +96,53 @@
 								/>
 							</vue-draggable-resizable>
 						</template>
-
-						<vue-draggable-resizable
-							:style="{
-								border: eidtFinshed
-									? 'none'
-									: '1px dashed #000',
-							}"
-							v-if="showDragText"
-							@resizestop="resizestop"
-							@dragstop="dragstop"
-							@activated="onTextActivated"
-							:active="textActive"
-							:preventDeactivation="true"
-							:w="textWidth"
-							:h="textHeight"
-							:x="textx"
-							:y="texty"
-							:z="textZ"
-							@dragging="onTextDrag"
-							@resizing="onTextResize"
-							:parent="true"
-						>
-							<p
-								ref="inputContent"
+						<template>
+							<vue-draggable-resizable
+								v-for="item in selectTextList"
+								:key="item.id"
 								:style="{
-									fontSize: fontSize + 'px',
-									color: currentColor,
-									fontFamily: fontFamily,
-									fontWeight: 'bold',
-									width: '100%',
-									transform: 'rotate(' + textdeg + 'deg)',
+									border: eidtFinshed
+										? 'none'
+										: '1px dashed #000',
 								}"
+								v-if="showDragText"
+								@resizestop="resizestop"
+								@dragstop="dragstop"
+								@activated="onTextActivated(item)"
+								:active="item.textActive"
+								:preventDeactivation="true"
+								:w="item.w"
+								:h="item.h"
+								:x="item.x"
+								:y="item.y"
+								:z="item.z"
+								@dragging="(x, y) => onTextDrag(x, y, item)"
+								@resizing="
+									(x, y, w, h) =>
+										onTextResize(x, y, w, h, item)
+								"
+								:parent="true"
 							>
-								{{ textContent ? textContent : "Text in here" }}
-							</p>
-						</vue-draggable-resizable>
+								<p
+									:ref="'inputContent' + item.id"
+									:style="{
+										fontSize: item.fontSize + 'px',
+										color: item.currentColor,
+										fontFamily: item.fontFamily,
+										fontWeight: 'bold',
+										width: '100%',
+										transform:
+											'rotate(' + item.textdeg + 'deg)',
+									}"
+								>
+									{{
+										item.textContent
+											? item.textContent
+											: "Text in here"
+									}}
+								</p>
+							</vue-draggable-resizable>
+						</template>
 					</div>
 				</div>
 			</div>
@@ -263,7 +270,7 @@
 								:style="{
 									background: item,
 									transform: `translateY(
-									${currentColor == item ? '-10px' : '0'}
+									${selectShowText.currentColor == item ? '-10px' : '0'}
 								)`,
 								}"
 								style="{ transform: 'rotate(' + textdeg + 'deg)' }"
@@ -277,7 +284,9 @@
 								@click="setFontFamily(item)"
 								:style="{
 									color:
-										fontFamily == item ? '#c62336' : '#333',
+										selectShowText.fontFamily == item
+											? '#c62336'
+											: '#333',
 									fontFamily: item,
 								}"
 							>
@@ -293,7 +302,9 @@
 								@click="setFontSize(item)"
 								:style="{
 									color:
-										fontSize == item ? '#c62336' : '#333',
+										selectShowText.fontSize == item
+											? '#c62336'
+											: '#333',
 								}"
 							>
 								<span :style="{ fontSize: item + 'px' }"
@@ -314,7 +325,7 @@
 								@blur="textfocus = false"
 								class="content"
 								@input="changeTextContent"
-								v-model="textContent"
+								v-model="selectShowText.textContent"
 								maxlength="40"
 								placeholder="点这里可以输入文字内容哦"
 							></textarea>
@@ -457,11 +468,16 @@
 				>
 			</div>
 
-			<div
-				class="prevBox"
-				v-if="textContent || selectImgList.length || preDrawAry.length"
-			>
-				<div @click="prevDesigner" class="finshedbtn flex all-center">
+			<div class="prevBox">
+				<div
+					v-if="
+						selectTextList.length ||
+							selectImgList.length ||
+							preDrawAry.length
+					"
+					@click="prevDesigner"
+					class="finshedbtn flex all-center"
+				>
 					<span class="font12 _33hei">上一步</span>
 				</div>
 			</div>
@@ -469,7 +485,7 @@
 				class="finshedBox"
 				v-if="
 					eidtFinshed &&
-						(textContent ||
+						(selectTextList.length ||
 							selectImgList.length ||
 							preDrawAry.length)
 				"
@@ -484,7 +500,7 @@
 			<div
 				v-if="
 					!eidtFinshed &&
-						(textContent ||
+						(selectTextList.length ||
 							selectImgList.length ||
 							preDrawAry.length)
 				"
@@ -495,7 +511,8 @@
 					max="180"
 					v-if="textActive"
 					vertical
-					v-model="textdeg"
+					@change="onChangeTextSlider"
+					v-model="selectShowText.textdeg"
 					active-color="#c52436"
 					bar-height="4px"
 				/>
@@ -506,7 +523,7 @@
 					active-color="#c52436"
 					v-else
 					vertical
-					@change="onChangeSlider"
+					@change="onChangeImgSlider"
 					v-model="selectShowImg.imgdeg"
 					bar-height="4px"
 				/>
@@ -537,13 +554,10 @@ export default {
 		let { designerInfo } = this.$route.query
 		let info = JSON.parse(designerInfo)
 		return {
+			textActive: false,
 			loading: true,
 			canvasZindex: 1,
 			designerInfo: info,
-			textWidth: 90,
-			textHeight: 20,
-			textActive: false,
-			textdeg: 0,
 			textfocus: false,
 			designerImg: "",
 			imgUrl: info.picUrl,
@@ -604,12 +618,11 @@ export default {
 			fontSize: "14px",
 			currentColor: "#000",
 			showDragText: false,
-			textx: 20,
-			texty: 20,
 			page: 1,
 			designAreaWidth: 338,
 			designAreaHeight: 338,
 			selectShowImg: { imgdeg: 0 },
+			selectShowText: {},
 			lastBackPressed: "",
 			status: "loading", //还有更多
 			selectzIndex: 1,
@@ -665,7 +678,7 @@ export default {
 			rubberWidth: 5,
 			preAllData: [],
 			isRubber: false,
-			textZ: "auto",
+			selectTextList: [],
 		}
 	},
 	mounted() {
@@ -673,7 +686,6 @@ export default {
 			el.addEventListener(
 				"touchstart",
 				function() {
-					console.log("===============")
 					var top = el.scrollTop,
 						totalScroll = el.scrollHeight,
 						currentScroll = top + el.offsetHeight
@@ -776,9 +788,11 @@ export default {
 			}
 		},
 		changeTextContent(e) {
-			if (this.$refs.inputContent) {
-				this.textHeight = this.$refs.inputContent.offsetHeight
+			let dom = this.$refs["inputContent" + this.selectShowText.id]
+			if (dom.length) {
+				this.selectShowText.h = dom[0].offsetHeight
 			}
+			this.selectShowText.textContent = e.target.value
 		},
 		isPc() {
 			const userAgentInfo = navigator.userAgent
@@ -864,8 +878,6 @@ export default {
 		},
 		canvasMove(e) {
 			if (this.canvasMoveUse && this.designerWhat == "tuya") {
-				const t = e.target
-				console.log(e.target)
 				let canvasX
 				let canvasY
 				console.log(this.isPc())
@@ -900,7 +912,33 @@ export default {
 		},
 		// mouseup
 		canvasUp(e) {
-			console.log("canvasUp")
+			if (this.isRubber) {
+				let canvasX
+				let canvasY
+				if (this.isPc()) {
+					canvasX = e.clientX - this.$refs.leftBox.offsetWidth
+					canvasY = e.clientY - 20
+				} else {
+					if (e.changedTouches && e.changedTouches.length) {
+						canvasX =
+							e.changedTouches[0].clientX -
+							this.$refs.leftBox.offsetWidth
+						canvasY = e.changedTouches[0].clientY - 20
+					} else {
+						canvasX = e.clientX - this.$refs.leftBox.offsetWidth
+						canvasY = e.clientY - 20
+					}
+				}
+				this.context.save()
+				this.context.clearRect(
+					canvasX,
+					canvasY,
+					this.rubberWidth * 2,
+					this.rubberWidth * 2
+				)
+				this.context.restore()
+			}
+
 			const preData = this.context.getImageData(
 				0,
 				0,
@@ -920,6 +958,10 @@ export default {
 		},
 		// mousedown
 		canvasDown(e) {
+			if (this.designerWhat != "tuya") {
+				this.clickImg()
+				return false
+			}
 			console.log("canvasDown")
 			this.canvasMoveUse = true
 			// client是基于整个页面的坐标
@@ -975,23 +1017,56 @@ export default {
 			this.canvasZindex = 1002
 			this.selectzIndex = 1
 			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.selectTextList.forEach((item) => (item.textActive = false))
 			this.$forceUpdate()
 		},
 		setdesignerWhatText() {
 			this.designerWhat = "text"
 			this.showDragText = true
 			this.textActive = true
-			this.selectImgList.forEach((item) => (item.imgActive = false))
+			this.selectImgList.forEach((item) => {
+				item.imgActive = false
+				item.z = "auto"
+			})
+			let len = this.selectTextList.length
+			if (
+				this.eidtFinshed ||
+				!this.selectTextList.length ||
+				this.selectTextList[len - 1].textContent != ""
+			) {
+				this.selectShowText = {
+					textdeg: 0,
+					textContent: "",
+					fontSize: this.fontSizeList[0],
+					fontFamily: this.fontFamilyList[0],
+					currentColor: this.fontColorList[0],
+					x: 40,
+					y: 40,
+					w: 100,
+					h: 20,
+					z: 1,
+					textActive: true,
+					id: new Date().getTime(),
+				}
+				this.selectTextList.push(this.selectShowText)
+				this.savePrevData()
+			} else {
+				this.selectShowText.textActive = true
+			}
 			this.eidtFinshed = false
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
-			this.textZ = 1
+
 			this.$forceUpdate()
 		},
 		setdesignerWhatImg() {
 			this.designerWhat = "img"
 			this.textActive = false
 			this.eidtFinshed = false
+			this.selectTextList.forEach((item) => {
+				item.textActive = false
+				item.z = "auto"
+			})
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
 			if (this.selectImgList.length) {
@@ -1001,25 +1076,29 @@ export default {
 		},
 		setFontSize(fontSize) {
 			this.designerWhat = "text"
-			this.fontSize = fontSize
+			this.selectShowText.fontSize = fontSize
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
+			this.savePrevData()
+			this.$forceUpdate()
 		},
 		setFontFamily(fontFamily) {
 			this.designerWhat = "text"
-			this.fontFamily = fontFamily
+			this.selectShowText.fontFamily = fontFamily
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
+			this.savePrevData()
 			this.$forceUpdate()
 		},
 		setColor(currentColor) {
 			this.designerWhat = "text"
-			this.currentColor = currentColor
+			this.selectShowText.currentColor = currentColor
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
+			this.savePrevData()
 			this.$forceUpdate()
 		},
 		setCanvasColor(color) {
@@ -1199,25 +1278,21 @@ export default {
 		savePrevData() {
 			let obj = {
 				selectImgList: this.selectImgList,
-				textContent: this.textContent,
-				textdeg: this.textdeg,
-				textx: this.textx,
-				texty: this.texty,
+				selectTextList: this.selectTextList,
 			}
 			this.preAllData.push(JSON.parse(JSON.stringify(obj)))
 			console.log("----------------------savePrevData")
 			console.log(this.preAllData)
 		},
-		onTextResize: function(x, y, width, height) {
-			console.log(width, height)
-			this.textX = x
-			this.textY = y
-			this.textWidth = width == 0 ? 1 : width
-			this.textHeight = height == 0 ? 1 : height
+		onTextResize(x, y, width, height, item) {
+			item.x = x
+			item.y = y
+			item.w = width == 0 ? 1 : width
+			item.h = height == 0 ? 1 : height
 		},
-		onTextDrag(x, y) {
-			this.textX = x
-			this.textY = y
+		onTextDrag(x, y, item) {
+			item.x = x
+			item.y = y
 		},
 
 		onImgResize(x, y, width, height, item) {
@@ -1226,19 +1301,27 @@ export default {
 			item.w = width == 0 ? 1 : width
 			item.h = height == 0 ? 1 : height
 		},
+		onImgDrag(x, y, item) {
+			item.x = x
+			item.y = y
+		},
 		resizestop() {
 			this.savePrevData()
 		},
 		dragstop() {
 			this.savePrevData()
 		},
-		onImgDrag(x, y, item) {
-			item.x = x
-			item.y = y
+		clickImg() {
+			console.log("----")
+			this.selectzIndex = 1002
+			this.eidtFinshed = false
 		},
 		selectImg(item) {
 			this.designerWhat = "img"
-			this.textZ = "auto"
+			this.selectTextList.forEach((item) => {
+				item.z = "auto"
+				item.textActive = false
+			})
 			let len = this.selectImgList.length
 			if (this.eidtFinshed || !this.selectImgList.length) {
 				this.selectShowImg = {
@@ -1250,9 +1333,9 @@ export default {
 					w: 100,
 					h: 100,
 					z: 1,
+					imgActive: true,
 				}
 				this.selectImgList.push(this.selectShowImg)
-				this.selectImgList[len].imgActive = true
 			} else {
 				this.selectShowImg = {
 					url: item.mainPic,
@@ -1276,13 +1359,18 @@ export default {
 			this.$forceUpdate()
 		},
 		onImgActivated(item) {
-			this.textZ = "auto"
-			this.designerWhat = "img"
-			this.eidtFinshed = false
+			this.selectTextList.forEach((item) => {
+				item.textActive = false
+				item.z = "auto"
+			})
+			this.selectShowImg = item
 			this.selectImgList.forEach((item) => {
 				item.imgActive = false
 				item.z = "auto"
 			})
+			this.designerWhat = "img"
+			this.eidtFinshed = false
+
 			item.imgActive = true
 			item.z = 1
 			this.selectzIndex = 1002
@@ -1290,14 +1378,19 @@ export default {
 			this.textActive = false
 			this.$forceUpdate()
 		},
-
-		onTextActivated() {
+		onTextActivated(item) {
+			this.textActive = true
 			this.designerWhat = "text"
 			this.eidtFinshed = false
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
-			this.textActive = true
-			this.textZ = 1
+			this.selectShowText = item
+			this.selectTextList.forEach((item) => {
+				item.textActive = false
+				item.z = "auto"
+			})
+			item.textActive = true
+			item.z = 1
 			this.selectImgList.forEach((item) => {
 				item.imgActive = false
 				item.z = "auto"
@@ -1305,6 +1398,12 @@ export default {
 			this.$forceUpdate()
 		},
 		fineshDesigner() {
+			Toast.loading({
+				duration: 0,
+				message: "上传中...",
+				forbidClick: true,
+				loadingType: "spinner",
+			})
 			let content_html = document.getElementById("designerBox") //要转化的div
 			console.log("content_html", content_html)
 			let width = content_html.offsetWidth
@@ -1359,27 +1458,39 @@ export default {
 				// $("#grow-img").attr("src", canvas.toDataURL())
 			})
 		},
-		onChangeSlider(value) {
+		onChangeImgSlider(value) {
 			this.selectShowImg.imgdeg = value
+			Toast("当前值：" + value)
+		},
+		onChangeTextSlider(value) {
+			this.selectShowText.textdeg = value
+			Toast("当前值：" + value)
 		},
 		yesDesigner() {
-			if (
-				this.preAllData.length &&
-				this.textContent !=
-					this.preAllData[this.preAllData.length - 1].textContent
-			) {
+			if (this.preAllData.length) {
 				this.savePrevData()
 			}
-			if (!this.textContent) {
+
+			if (
+				this.selectTextList.length &&
+				this.selectTextList[this.selectTextList.length - 1]
+					.textContent == ""
+			) {
+				this.selectTextList.pop()
+			}
+			if (!this.selectTextList.length) {
 				this.showDragText = false
 			}
+			this.selectTextList.forEach((item) => (item.textActive = false))
 			this.selectImgList.forEach((item) => (item.imgActive = false))
-			this.selectzIndex = 1002
+			this.selectzIndex = 1
 			this.canvasZindex = 2
 			this.designerWhat = "img"
 			this.textActive = false
-			this.imgActive = false
 			this.eidtFinshed = true
+		},
+		prevRouter() {
+			this.$router.go(-1)
 		},
 		prevDesigner() {
 			this.controlCanvas("prev")
@@ -1388,35 +1499,24 @@ export default {
 			}
 			console.log("prealldata", this.preAllData[0])
 			this.preAllData.pop()
-			if (this.preAllData.length == 1) {
+			if (this.preAllData.length == 0) {
+				console.log("==================这里是一个")
 				this.selectImgList = []
-				this.textContent = ""
-				this.textdeg = 0
-				this.textx = 20
-				this.texty = 20
+				this.selectTextList = []
+				this.preAllData = []
+				this.designerWhat = "img"
 			} else {
 				if (this.preAllData[this.preAllData.length - 1]) {
 					this.selectImgList = this.preAllData[
 						this.preAllData.length - 1
 					].selectImgList
-					this.textContent = this.preAllData[
+					this.selectTextList = this.preAllData[
 						this.preAllData.length - 1
-					].textContent
-					this.textdeg = this.preAllData[
-						this.preAllData.length - 1
-					].textdeg
-					this.textx = this.preAllData[
-						this.preAllData.length - 2
-					].textx
-					this.texty = this.preAllData[
-						this.preAllData.length - 2
-					].texty
+					].selectTextList
 				}
 			}
+
 			this.eidtFinshed = true
-			if (!this.textContent) {
-				this.showDragText = false
-			}
 			this.$forceUpdate()
 		},
 		resetDesigner() {
@@ -1425,10 +1525,8 @@ export default {
 				message: "取消您当前的设计？",
 			}).then(() => {
 				this.preAllData = []
-				this.selectImgList = this.selectImgList.filter((item) => {
-					return item.id != this.selectShowImg.id
-				})
-				this.textContent = ""
+				this.selectImgList = []
+				this.selectTextList = []
 				this.showDragText = false
 				this.selectzIndex = 1
 				this.controlCanvas("clear")
@@ -1436,14 +1534,22 @@ export default {
 		},
 		delDesigner() {
 			if (this.textActive) {
-				this.textContent = ""
-				this.showDragText = false
+				this.selectTextList = this.selectTextList.filter((item) => {
+					return item.id != this.selectShowText.id
+				})
 			} else {
 				this.selectImgList = this.selectImgList.filter((item) => {
 					return item.id != this.selectShowImg.id
 				})
 			}
 			this.savePrevData()
+			if (
+				!this.selectImgList.length &&
+				!this.selectTextList.length &&
+				!this.preDrawAry.length
+			) {
+				this.preAllData = []
+			}
 			this.selectzIndex = 1002
 			this.designerWhat = "img"
 		},
@@ -1578,7 +1684,7 @@ export default {
 	top: 20px;
 	left: 30px;
 	height: 80px;
-	width: 40px;
+	width: 80px;
 	z-index: 1009;
 }
 .finshedBox {
@@ -1593,7 +1699,7 @@ export default {
 	position: absolute;
 	top: 80px;
 	right: 30px;
-	height: 60vh;
+	height: 400px;
 	width: 30px;
 	z-index: 1007;
 }
