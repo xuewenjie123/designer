@@ -61,7 +61,7 @@
 						}"
 					>
 						<template v-if="selectImgList.length">
-							<vue-draggable-resizable
+							<drag-and-resizable
 								v-for="(item, index) in selectImgList"
 								:style="{
 									border: eidtFinshed
@@ -73,7 +73,9 @@
 								:active="item.imgActive"
 								:preventDeactivation="true"
 								@resizestop="resizestop"
+								:handles="handles"
 								@dragstop="dragstop"
+								:lockAspectRatio="true"
 								:w="item.w"
 								:h="item.h"
 								:x="item.x"
@@ -94,10 +96,10 @@
 									}"
 									:src="item.url"
 								/>
-							</vue-draggable-resizable>
+							</drag-and-resizable>
 						</template>
 						<template>
-							<vue-draggable-resizable
+							<drag-and-resizable
 								v-for="item in selectTextList"
 								:key="item.id"
 								:style="{
@@ -105,6 +107,7 @@
 										? 'none'
 										: '1px dashed #000',
 								}"
+								:handles="texthandles"
 								v-if="showDragText"
 								@resizestop="resizestop"
 								@dragstop="dragstop"
@@ -141,7 +144,7 @@
 											: "Text in here"
 									}}
 								</p>
-							</vue-draggable-resizable>
+							</drag-and-resizable>
 						</template>
 					</div>
 				</div>
@@ -325,9 +328,9 @@
 								@blur="textfocus = false"
 								class="content"
 								@input="changeTextContent"
-								v-model="selectShowText.textContent"
+								:value="selectShowText.textContent"
 								maxlength="40"
-								placeholder="点这里可以输入文字内容哦"
+								placeholder="点这里可以输入文字内容哦,最多可输入40字"
 							></textarea>
 							<!-- <div class="flex all-center submitBtn">
 							<span class="font14 bold bai">提交</span>
@@ -506,27 +509,32 @@
 				"
 				class="sliderBox flex align-center flex-column"
 			>
-				<van-slider
-					min="-180"
-					max="180"
-					v-if="textActive"
-					vertical
-					@change="onChangeTextSlider"
-					v-model="selectShowText.textdeg"
-					active-color="#c52436"
-					bar-height="4px"
-				/>
+				<div style="height:300px;">
+					<van-slider
+						min="-180"
+						max="180"
+						@input="showDeg"
+						v-if="textActive"
+						vertical
+						@change="onChangeTextSlider"
+						v-model="selectShowText.textdeg"
+						active-color="#c52436"
+						bar-height="4px"
+					/>
 
-				<van-slider
-					min="-180"
-					max="180"
-					active-color="#c52436"
-					v-else
-					vertical
-					@change="onChangeImgSlider"
-					v-model="selectShowImg.imgdeg"
-					bar-height="4px"
-				/>
+					<van-slider
+						min="-180"
+						@input="showDeg"
+						max="180"
+						active-color="#c52436"
+						v-else
+						vertical
+						@change="onChangeImgSlider"
+						v-model="selectShowImg.imgdeg"
+						bar-height="4px"
+					/>
+				</div>
+
 				<div class="actionBox" @click="yesDesigner">
 					<span class="iconfont iconduihao"></span>
 				</div>
@@ -554,6 +562,13 @@ export default {
 		let { designerInfo } = this.$route.query
 		let info = JSON.parse(designerInfo)
 		return {
+			handles: [
+				"tl iconzuoshangfang",
+				"tr iconyoushangfang",
+				"br iconyouxiafang",
+				"bl iconzuoxiafang",
+			],
+			texthandles: ["mr iconxiangyou1", "ml iconxiangzuo1"],
 			textActive: false,
 			loading: true,
 			canvasZindex: 1,
@@ -622,7 +637,9 @@ export default {
 			designAreaWidth: 338,
 			designAreaHeight: 338,
 			selectShowImg: { imgdeg: 0 },
-			selectShowText: {},
+			selectShowText: {
+				textContent: "",
+			},
 			lastBackPressed: "",
 			status: "loading", //还有更多
 			selectzIndex: 1,
@@ -788,11 +805,15 @@ export default {
 			}
 		},
 		changeTextContent(e) {
-			let dom = this.$refs["inputContent" + this.selectShowText.id]
-			if (dom.length) {
-				this.selectShowText.h = dom[0].offsetHeight
-			}
 			this.selectShowText.textContent = e.target.value
+			this.$nextTick(() => {
+				let dom = this.$refs["inputContent" + this.selectShowText.id]
+				if (dom.length) {
+					this.selectShowText.h = dom[0].offsetHeight
+				}
+				console.log(" dom[0].offsetHeight", dom[0].offsetHeight)
+				this.$forceUpdate()
+			})
 		},
 		isPc() {
 			const userAgentInfo = navigator.userAgent
@@ -1080,8 +1101,16 @@ export default {
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
-			this.savePrevData()
-			this.$forceUpdate()
+			this.$nextTick(() => {
+				let dom = this.$refs["inputContent" + this.selectShowText.id]
+				if (dom.length) {
+					this.selectShowText.h = dom[0].offsetHeight
+				}
+				console.log(" dom[0].offsetHeight", dom[0].offsetHeight)
+				this.savePrevData()
+				this.$set(this, "selectTextList", this.selectTextList)
+				this.$forceUpdate()
+			})
 		},
 		setFontFamily(fontFamily) {
 			this.designerWhat = "text"
@@ -1089,8 +1118,16 @@ export default {
 			this.textActive = true
 			this.selectImgList.forEach((item) => (item.imgActive = false))
 			this.eidtFinshed = false
-			this.savePrevData()
-			this.$forceUpdate()
+			this.$nextTick(() => {
+				let dom = this.$refs["inputContent" + this.selectShowText.id]
+				if (dom.length) {
+					this.selectShowText.h = dom[0].offsetHeight
+				}
+				console.log(" dom[0].offsetHeight", dom[0].offsetHeight)
+				this.savePrevData()
+				this.$set(this, "selectTextList", this.selectTextList)
+				this.$forceUpdate()
+			})
 		},
 		setColor(currentColor) {
 			this.designerWhat = "text"
@@ -1352,10 +1389,19 @@ export default {
 			}
 			this.savePrevData()
 			this.eidtFinshed = false
-
 			this.textActive = false
 			this.selectzIndex = 1002
 			this.canvasZindex = 1
+			let img = new Image()
+			img.src = item.mainPic
+			img.onload = () => {
+				console.log("img.width", img.width)
+				console.log("img.height", img.height)
+				this.selectShowImg.w = img.width
+				this.selectShowImg.h = img.height
+				this.$set(this, "selectImgList", this.selectImgList)
+				this.$forceUpdate()
+			}
 			this.$forceUpdate()
 		},
 		onImgActivated(item) {
@@ -1460,11 +1506,13 @@ export default {
 		},
 		onChangeImgSlider(value) {
 			this.selectShowImg.imgdeg = value
+		},
+		showDeg(value) {
+			Toast.clear()
 			Toast("当前值：" + value)
 		},
 		onChangeTextSlider(value) {
 			this.selectShowText.textdeg = value
-			Toast("当前值：" + value)
 		},
 		yesDesigner() {
 			if (this.preAllData.length) {

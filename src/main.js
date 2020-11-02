@@ -14,8 +14,8 @@ Vue.use(Slider)
 Vue.use(SwipeItem)
 Vue.use(Loading)
 import { get, post, upFile } from "./utils/ajax.js"
-import VueDraggableResizable from "./components/vue-draggable-resizable.vue"
-Vue.component("vue-draggable-resizable", VueDraggableResizable)
+import dragAndResizable from "./components/dragAndResizable.vue"
+Vue.component("drag-and-resizable", dragAndResizable)
 Vue.component("header-common", HeaderCommon)
 Vue.prototype.$get = get
 Vue.prototype.$post = post

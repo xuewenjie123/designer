@@ -74,7 +74,7 @@ let eventsFor = events.mouse
 
 export default {
 	replace: true,
-	name: "vue-draggable-resizable",
+	name: "drag-and-resizable",
 	props: {
 		className: {
 			type: String,
@@ -188,28 +188,30 @@ export default {
 			validator: (val) =>
 				typeof val === "string" ? val === "auto" : val >= 0,
 		},
+		// [
+		//     "tl iconzuoshangfang",
+		//     "tm icon01_xiangshang",
+		//     "tr iconyoushangfang",
+		//     "mr iconxiangyou1",
+		//     "br iconyouxiafang",
+		//     "bm icon01_xiangxia",
+		//     "bl iconzuoxiafang",
+		//     "ml iconxiangzuo1",
+		// ]
 		handles: {
 			type: Array,
 			default: () => [
 				"tl iconzuoshangfang",
-				"tm icon01_xiangshang",
 				"tr iconyoushangfang",
-				"mr iconxiangyou1",
 				"br iconyouxiafang",
-				"bm icon01_xiangxia",
 				"bl iconzuoxiafang",
-				"ml iconxiangzuo1",
 			],
 			validator: (val) => {
 				const s = new Set([
 					"tl iconzuoshangfang",
-					"tm icon01_xiangshang",
 					"tr iconyoushangfang",
-					"mr iconxiangyou1",
 					"br iconyouxiafang",
-					"bm icon01_xiangxia",
 					"bl iconzuoxiafang",
-					"ml iconxiangzuo1",
 				])
 
 				return new Set(val.filter((h) => s.has(h))).size === val.length
@@ -830,7 +832,10 @@ export default {
 				tmpDeltaY,
 				this.scale
 			)
-
+			//                  "tl iconzuoshangfang",
+			// 					"tr iconyoushangfang",
+			// 					"br iconyouxiafang",
+			// 					"bl iconzuoxiafang",
 			if (this.handle.includes("b")) {
 				bottom = restrictToBounds(
 					mouseClickPosition.bottom + deltaY,

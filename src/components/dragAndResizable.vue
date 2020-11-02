@@ -74,7 +74,7 @@ let eventsFor = events.mouse
 
 export default {
 	replace: true,
-	name: "vue-draggable-resizable",
+	name: "drag-and-resizable",
 	props: {
 		className: {
 			type: String,
@@ -166,12 +166,12 @@ export default {
 		},
 		maxWidth: {
 			type: Number,
-			default: null,
+			default: 300,
 			validator: (val) => val >= 0,
 		},
 		maxHeight: {
 			type: Number,
-			default: null,
+			default: 300,
 			validator: (val) => val >= 0,
 		},
 		x: {
@@ -188,6 +188,20 @@ export default {
 			validator: (val) =>
 				typeof val === "string" ? val === "auto" : val >= 0,
 		},
+		// [
+		//     "tl iconzuoshangfang",
+		//     "tm icon01_xiangshang",
+		//     "tr iconyoushangfang",
+		//     "mr iconxiangyou1",
+		//     "br iconyouxiafang",
+		//     "bm icon01_xiangxia",
+		//     "bl iconzuoxiafang",
+		//     "ml iconxiangzuo1",
+		// ]
+		// "tl iconzuoshangfang",
+		// "tr iconyoushangfang",
+		// "br iconyouxiafang",
+		// "bl iconzuoxiafang",
 		handles: {
 			type: Array,
 			default: () => [
@@ -200,20 +214,20 @@ export default {
 				"bl iconzuoxiafang",
 				"ml iconxiangzuo1",
 			],
-			validator: (val) => {
-				const s = new Set([
-					"tl iconzuoshangfang",
-					"tm icon01_xiangshang",
-					"tr iconyoushangfang",
-					"mr iconxiangyou1",
-					"br iconyouxiafang",
-					"bm icon01_xiangxia",
-					"bl iconzuoxiafang",
-					"ml iconxiangzuo1",
-				])
+			// validator: (val) => {
+			// 	const s = new Set([
+			// 		"tl",
+			// 		"tm",
+			// 		"tr",
+			// 		"mr",
+			// 		"br",
+			// 		"bm",
+			// 		"bl",
+			// 		"ml",
+			// 	])
 
-				return new Set(val.filter((h) => s.has(h))).size === val.length
-			},
+			// 	return new Set(val.filter((h) => s.has(h))).size === val.length
+			// },
 		},
 		dragHandle: {
 			type: String,
@@ -544,12 +558,12 @@ export default {
 
 			// Here we avoid a dangerous recursion by faking
 			// corner handles as middle handles
-			if (this.lockAspectRatio && !handle.includes("m")) {
-				this.handle = "m" + handle.substring(1)
-			} else {
-				this.handle = handle
-			}
-
+			// if (this.lockAspectRatio && !handle.includes("m")) {
+			// 	this.handle = "m" + handle.substring(1)
+			// } else {
+			// 	this.handle = handle
+			// }
+			this.handle = handle
 			this.resizing = true
 
 			this.mouseClickPosition.mouseX = e.touches
@@ -830,48 +844,98 @@ export default {
 				tmpDeltaY,
 				this.scale
 			)
+			if (this.lockAspectRatio) {
+				if (this.handle.includes("bl")) {
+					bottom = restrictToBounds(
+						mouseClickPosition.bottom + deltaY,
+						this.bounds.minBottom,
+						this.bounds.maxBottom
+					)
 
-			if (this.handle.includes("b")) {
-				bottom = restrictToBounds(
-					mouseClickPosition.bottom + deltaY,
-					this.bounds.minBottom,
-					this.bounds.maxBottom
-				)
-
-				if (this.lockAspectRatio && this.resizingOnY) {
-					right = this.right - (this.bottom - bottom) * aspectFactor
+					if (this.lockAspectRatio && this.resizingOnY) {
+						left = this.left - (this.bottom - bottom) * aspectFactor
+					}
 				}
-			} else if (this.handle.includes("t")) {
-				top = restrictToBounds(
-					mouseClickPosition.top - deltaY,
-					this.bounds.minTop,
-					this.bounds.maxTop
-				)
+				if (this.handle.includes("tr")) {
+					top = restrictToBounds(
+						mouseClickPosition.top - deltaY,
+						this.bounds.minTop,
+						this.bounds.maxTop
+					)
 
-				if (this.lockAspectRatio && this.resizingOnY) {
-					left = this.left - (this.top - top) * aspectFactor
+					if (this.lockAspectRatio && this.resizingOnX) {
+						right = this.right - (this.top - top) * aspectFactor
+					}
 				}
-			}
 
-			if (this.handle.includes("r")) {
-				right = restrictToBounds(
-					mouseClickPosition.right + deltaX,
-					this.bounds.minRight,
-					this.bounds.maxRight
-				)
+				if (this.handle.includes("br")) {
+					bottom = restrictToBounds(
+						mouseClickPosition.bottom + deltaY,
+						this.bounds.minBottom,
+						this.bounds.maxBottom
+					)
 
-				if (this.lockAspectRatio && this.resizingOnX) {
-					bottom = this.bottom - (this.right - right) / aspectFactor
+					if (this.lockAspectRatio && this.resizingOnX) {
+						right =
+							this.right - (this.bottom - bottom) * aspectFactor
+					}
 				}
-			} else if (this.handle.includes("l")) {
-				left = restrictToBounds(
-					mouseClickPosition.left - deltaX,
-					this.bounds.minLeft,
-					this.bounds.maxLeft
-				)
+				if (this.handle.includes("tl")) {
+					left = restrictToBounds(
+						mouseClickPosition.left - deltaX,
+						this.bounds.minLeft,
+						this.bounds.maxLeft
+					)
 
-				if (this.lockAspectRatio && this.resizingOnX) {
-					top = this.top - (this.left - left) / aspectFactor
+					if (this.lockAspectRatio && this.resizingOnX) {
+						top = this.top - (this.left - left) / aspectFactor
+					}
+				}
+			} else {
+				if (this.handle.includes("b")) {
+					bottom = restrictToBounds(
+						mouseClickPosition.bottom + deltaY,
+						this.bounds.minBottom,
+						this.bounds.maxBottom
+					)
+
+					if (this.lockAspectRatio && this.resizingOnY) {
+						right =
+							this.right - (this.bottom - bottom) * aspectFactor
+					}
+				} else if (this.handle.includes("t")) {
+					top = restrictToBounds(
+						mouseClickPosition.top - deltaY,
+						this.bounds.minTop,
+						this.bounds.maxTop
+					)
+
+					if (this.lockAspectRatio && this.resizingOnY) {
+						left = this.left - (this.top - top) * aspectFactor
+					}
+				}
+
+				if (this.handle.includes("r")) {
+					right = restrictToBounds(
+						mouseClickPosition.right + deltaX,
+						this.bounds.minRight,
+						this.bounds.maxRight
+					)
+
+					if (this.lockAspectRatio && this.resizingOnX) {
+						bottom =
+							this.bottom - (this.right - right) / aspectFactor
+					}
+				} else if (this.handle.includes("l")) {
+					left = restrictToBounds(
+						mouseClickPosition.left - deltaX,
+						this.bounds.minLeft,
+						this.bounds.maxLeft
+					)
+
+					if (this.lockAspectRatio && this.resizingOnX) {
+						top = this.top - (this.left - left) / aspectFactor
+					}
 				}
 			}
 
@@ -888,8 +952,8 @@ export default {
 			this.top = top
 			this.right = right
 			this.bottom = bottom
-			this.width = width
-			this.height = height
+			this.width = width == 0 ? 1 : width
+			this.height = height == 0 ? 1 : height
 
 			this.$emit("resizing", this.left, this.top, this.width, this.height)
 		},
