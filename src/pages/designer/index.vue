@@ -109,7 +109,7 @@
 								}"
 								:handles="texthandles"
 								v-if="showDragText"
-								@resizestop="resizestop"
+								@resizestop="resizestop('text')"
 								@dragstop="dragstop"
 								@activated="onTextActivated(item)"
 								:active="item.textActive"
@@ -553,6 +553,7 @@ import html2canvas from "html2canvas"
 export default {
 	name: "login",
 	data() {
+		//这里因为，一开始加载图片不知宽高，元素在定位情况下，有右移，所以展示loading
 		Toast.loading({
 			duration: 0,
 			message: "加载中...",
@@ -1342,8 +1343,22 @@ export default {
 			item.x = x
 			item.y = y
 		},
-		resizestop() {
-			this.savePrevData()
+		resizestop(text) {
+			if (text == "text") {
+				this.$nextTick(() => {
+					let dom = this.$refs[
+						"inputContent" + this.selectShowText.id
+					]
+					if (dom.length) {
+						this.selectShowText.h = dom[0].offsetHeight
+					}
+					console.log(" dom[0].offsetHeight", dom[0].offsetHeight)
+					this.savePrevData()
+					this.$forceUpdate()
+				})
+			} else {
+				this.savePrevData()
+			}
 		},
 		dragstop() {
 			this.savePrevData()
